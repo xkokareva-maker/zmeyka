@@ -794,9 +794,9 @@
         document.getElementById('gameover-screen').classList.remove('hidden');
     }
 
-    // ОБРАБОТКА УПРАВЛЕНИЯ (MOBILE + PC)
+  // ОБРАБОТКА УПРАВЛЕНИЯ (KEYBOARD + ON-SCREEN JOYSTICK)
     
-    // 1. Клавиатура (стрелочки для тестирования в браузере на ПК)
+    // 1. Управление с клавиатуры для тестов на ПК
     window.addEventListener('keydown', e => {
         switch(e.key) {
             case 'ArrowUp':    if (velocity.y !== 1)  nextVelocity = { x: 0, y: -1 }; break;
@@ -806,38 +806,41 @@
         }
     });
 
-    // 2. Высокоточное управление свайпами для смартфонов
-    let touchStartX = 0;
-    let touchStartY = 0;
+    // 2. Управление кнопками экранного джойстика
+    // Используем 'touchstart' вместо 'click' для мгновенного отклика без задержек мобильных браузеров
+    document.getElementById('joy-up').addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (velocity.y !== 1) nextVelocity = { x: 0, y: -1 };
+    });
 
-    window.addEventListener('touchstart', e => {
-        touchStartX = e.changedTouches[0].screenX;
-        touchStartY = e.changedTouches[0].screenY;
-    }, { passive: true });
+    document.getElementById('joy-down').addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (velocity.y !== -1) nextVelocity = { x: 0, y: 1 };
+    });
 
-    window.addEventListener('touchend', e => {
-        let touchEndX = e.changedTouches[0].screenX;
-        let touchEndY = e.changedTouches[0].screenY;
-        
-        let dx = touchEndX - touchStartX;
-        let dy = touchEndY - touchStartY;
+    document.getElementById('joy-left').addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (velocity.x !== 1) nextVelocity = { x: -1, y: 0 };
+    });
 
-        // Определяем доминирующий вектор свайпа (горизонтальный или вертикальный)
-        if (Math.abs(dx) > Math.abs(dy)) {
-            // Горизонтальный свайп
-            if (Math.abs(dx) > 30) { // Чувствительность свайпа (минимальный порог 30px)
-                if (dx > 0 && velocity.x !== -1) nextVelocity = { x: 1, y: 0 };      // Свайп вправо
-                else if (dx < 0 && velocity.x !== 1) nextVelocity = { x: -1, y: 0 }; // Свайп влево
-            }
-        } else {
-            // Вертикальный свайп
-            if (Math.abs(dy) > 30) {
-                if (dy > 0 && velocity.y !== -1) nextVelocity = { x: 0, y: 1 };       // Свайп вниз
-                else if (dy < 0 && velocity.y !== 1) nextVelocity = { x: 0, y: -1 };  // Свайп вверх
-            }
-        }
-    }, { passive: true });
+    document.getElementById('joy-right').addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (velocity.x !== -1) nextVelocity = { x: 1, y: 0 };
+    });
 
+    // Дублируем для мышки, чтобы джойстик кликался и на ПК при тестировании
+    document.getElementById('joy-up').addEventListener('click', () => {
+        if (velocity.y !== 1) nextVelocity = { x: 0, y: -1 };
+    });
+    document.getElementById('joy-down').addEventListener('click', () => {
+        if (velocity.y !== -1) nextVelocity = { x: 0, y: 1 };
+    });
+    document.getElementById('joy-left').addEventListener('click', () => {
+        if (velocity.x !== 1) nextVelocity = { x: -1, y: 0 };
+    });
+    document.getElementById('joy-right').addEventListener('click', () => {
+        if (velocity.x !== -1) nextVelocity = { x: 1, y: 0 };
+    });
     // ОБРАБОТЧИКИ НАЖАТИЙ НА КНОПКИ МЕНЮ
     document.getElementById('start-btn').addEventListener('click', () => {
         document.getElementById('menu-screen').classList.add('hidden');
