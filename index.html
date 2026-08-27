@@ -822,14 +822,47 @@
     }
 
     // Вспомогательная функция для отрисовки колючки (сухой кашель)
-    function drawStar(cx, cy, spikes, outerRadius, innerRadius) {
-        let rot = Math.PI / 2 * 3; let x = cx; let y = cy; let step = Math.PI / spikes;
-        ctx.beginPath(); ctx.moveTo(cx, cy - outerRadius);
-        for (let i = 0; i < spikes; i++) {
-            x = cx + Math.cos(rot) * outerRadius; y = cy + Math.sin(rot) * outerRadius; ctx.lineTo(x, y); rot += step;
-            x = cx + Math.cos(rot) * innerRadius; y = cy + Math.sin(rot) * innerRadius; ctx.lineTo(x, y); rot += step;
+   // Новая функция отрисовки понятного колючего вируса (вместо drawStar)
+    function drawCoughVirus(cx, cy, radius) {
+        ctx.save();
+        
+        // 1. Рисуем шипы (острые палочки с кружочками на концах, торчащие во все стороны)
+        ctx.strokeStyle = '#990000'; // Темно-красный цвет для шипов
+        ctx.lineWidth = 2.5;
+        
+        const spikesCount = 8; // 8 выразительных шипов по кругу
+        for (let i = 0; i < spikesCount; i++) {
+            let angle = (i * Math.PI * 2) / spikesCount;
+            // Координаты конца шипа
+            let rx = cx + Math.cos(angle) * (radius + 3);
+            let ry = cy + Math.sin(angle) * (radius + 3);
+            
+            // Линия шипа
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(rx, ry);
+            ctx.stroke();
+            
+            // Опасная головка на конце шипа
+            ctx.fillStyle = 'var(--rengalin-red)';
+            ctx.beginPath();
+            ctx.arc(rx, ry, 2, 0, Math.PI * 2);
+            ctx.fill();
         }
-        ctx.lineTo(cx, cy - outerRadius); ctx.closePath(); ctx.fill();
+        
+        // 2. Рисуем центральное пульсирующее тело колючки
+        ctx.fillStyle = 'var(--rengalin-red)'; // Ярко-красное ядро
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius - 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 3. Блик для объема, чтобы колючка выглядела трехмерной и сочной
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.beginPath();
+        ctx.arc(cx - 3, cy - 3, 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
     }
 
     // УВЕДОМЛЕНИЯ И ИНТЕРФЕЙСНЫЕ ПЛАШКИ
