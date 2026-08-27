@@ -399,7 +399,7 @@
     // Цвета тела змейки (в стиле силуэтов Ренгалина)
     const bodyColors = ['#00A0E2', '#F39200', '#79B443'];
 
-   // Исправленное масштабирование поля под крупную сетку 15х15
+   // Исправленное масштабирование поля под крупную сетку 11х11
     function resizeCanvas() {
         const container = document.getElementById('canvas-container');
         let width = container.clientWidth - 20;
@@ -477,25 +477,24 @@
         draw();
         gameInterval = setTimeout(gameLoop, currentSpeed);
     }
-    // Инициализация и сброс параметров для новой игры
+    // Старт игры (с оптимизированным спавном на поле 11х11)
     function initGame() {
         resizeCanvas();
         
-        // Начальная позиция змейки по центру поля
-        const startX = Math.floor(tileCountX / 2);
-        const startY = Math.floor(tileCountY / 2);
+        // Смещаем стартовую позицию чуть ближе к центру для компактного поля
+        const startX = 4;
+        const startY = Math.floor(gridCount / 2);
         
+        // Змейка появляется из 3-х сегментов
         snake = [
             { x: startX, y: startY },
             { x: startX - 1, y: startY },
             { x: startX - 2, y: startY }
         ];
         
-        // Начальное движение вправо
         velocity = { x: 1, y: 0 };
         nextVelocity = { x: 1, y: 0 };
         
-        // Сброс метрик текущей сессии
         score = 0;
         destroyedCoughs = 0;
         totalShieldTime = 0;
@@ -505,17 +504,14 @@
         coughs = [];
         currentSpeed = baseSpeed;
         
-        // Обновление UI
         document.getElementById('score-val').innerText = score;
         updateStatusBadge();
         hideAlert();
         
-        // Спавн первых игровых объектов
         generateFood();
-        generateCough(); // Первый маркер сухого кашля
-        generateCough(); // Второй маркер влажного кашля
+        generateCough(); 
+        generateCough(); 
 
-        // Сброс старого таймера и запуск чистого игрового цикла
         if (gameInterval) clearTimeout(gameInterval);
         gameInterval = setTimeout(gameLoop, currentSpeed);
     }
