@@ -330,372 +330,458 @@
     function resizeCanvas() {
         const container = document.getElementById('canvas-container');
         let width = container.clientWidth - 20;
-Используйте код с осторожностью.
 // Округляем до кратного размеру ячейки сетки
-width = Math.floor(width / gridSize) * gridSize;
-if(width > 400) width = 400;
-canvas.width = width;
-canvas.height = width; // Квадратное поле
-tileCountX = canvas.width / gridSize;
-tileCountY = canvas.height / gridSize;
-}
-// Старт игры
-function initGame() {
-resizeCanvas();
-snake = [
-{ x: Math.floor(tileCountX/2), y: Math.floor(tileCountY/2) },
-{ x: Math.floor(tileCountX/2) - 1, y: Math.floor(tileCountY/2) },
-{ x: Math.floor(tileCountX/2) - 2, y: Math.floor(tileCountY/2) }
-];
-velocity = { x: 1, y: 0 };
-nextVelocity = { x: 1, y: 0 };
-score = 0;
-destroyedCoughs = 0;
-isSick = false;
-isShielded = false;
-rengalin = null;
-coughs = [];
-currentSpeed = baseSpeed;
-document.getElementById('score-val').innerText = score;
-updateStatusBadge();
-hideAlert();
-generateFood();
-generateCough();
-generateCough();
-if(gameInterval) clearInterval(gameInterval);
-gameInterval = setTimeout(gameLoop, currentSpeed);
-}
-// Главный игровой цикл
-function gameLoop() {
-// Применяем направление движения
-velocity = { ...nextVelocity };
-// Двигаем голову
-const head = { x: snake[0].x + velocity.x, y: snake[0].y + velocity.y };
-// Проверка столкновения со стенами или хвостом
-if (head.x < 0 || head.x >= tileCountX || head.y < 0 || head.y >= tileCountY || checkTailCollision(head)) {
-gameOver();
-return;
-}
-snake.unshift(head);
-// Таймеры состояний
-handleTimers();
-// Проверка поедания сущностей
-let ateSomething = false;
-// 1. Поедание обычной еды
-if (head.x === food.x && head.y === food.y) {
-score += 10;
-document.getElementById('score-val').innerText = score;
-generateFood();
-ateSomething = true;
-// С шансом 30% генерируем дополнительный кашель, если змейка растет
-if(Math.random() < 0.3) generateCough();
-}
-// 2. Наезд на Кашель
-for (let i = coughs.length - 1; i >= 0; i--) {
-if (head.x === coughs[i].x && head.y === coughs[i].y) {
-if (isShielded) {
-// Если под защитой Ренгалина — уничтожаем кашель безопасно
-score += 30; // Тройные очки
-destroyedCoughs++;
-document.getElementById('score-val').innerText = score;
-coughs.splice(i, 1);
-generateCough();
-} else if (!isSick) {
-// Заболеваем
-triggerSickness(coughs[i].type);
-}
-}
-}
-// 3. Поедание Ренгалина
-if (rengalin && head.x === rengalin.x && head.y === rengalin.y) {
-triggerShield();
-rengalin = null;
-}
-if (!ateSomething) {
-snake.pop(); // Если ничего не съели, убираем хвост для симуляции шага
-}
-// Отрезание хвоста каждую секунду при болезни (примерно каждые 7 кадров)
-if (isSick && !isShielded && snake.length > 2) {
-if (Math.random() < 0.12) { // Постепенное таяние хвоста
-snake.pop();
-if(snake.length <= 1) {
-gameOver();
-return;
-}
-}
-}
-draw();
-gameInterval = setTimeout(gameLoop, currentSpeed);
-}
-function checkTailCollision(head) {
-for (let i = 1; i < snake.length; i++) {
-if (snake[i].x === head.x && snake[i].y === head.y) return true;
-}
-return false;
-}
-// Работа с таймерами
-function handleTimers() {
-if (isShielded) {
-shieldTimer -= currentSpeed;
-totalShieldTime += (currentSpeed / 1000);
-updateStatusBadge(🛡️ Защита: ${Math.ceil(shieldTimer/1000)}с);
-if (shieldTimer <= 0) {
-isShielded = false;
-updateStatusBadge();
-currentSpeed = isSick ? baseSpeed * 1.6 : baseSpeed;
-}
-} else if (isSick) {
-sickTimer -= currentSpeed;
-if (sickTimer <= 0) {
-isSick = false;
-currentSpeed = baseSpeed;
-hideAlert();
-updateStatusBadge();
-}
-}
-}
-// Логика Болезни
-function triggerSickness(type) {
-isSick = true;
-isShielded = false;
-sickTimer = 7000; // 7 секунд
-currentSpeed = baseSpeed * 1.6; // Замедление на ~50%
-const title = type === 'dry' ? 'Симптом: Сухой кашель!' : 'Симптом: Влажный кашель!';
-showAlert(title, 'Змейка замедлилась. Срочно прими Ренгалин!');
-updateStatusBadge('🤒 Кашель атакует!');
-if (!rengalin) generateRengalin();
-}
-// Логика Защиты Ренгалина
-function triggerShield() {
-isSick = false;
-isShielded = true;
-shieldTimer = 6000; // 6 секунд
-currentSpeed = baseSpeed * 0.8; // Легкое ускорение супер-силы
-showAlert('Ренгалин победил кашель!', 'Универсальная защита активна на 6 секунд!');
-updateStatusBadge('🛡️ Защита активна');
-}
-// Генерация объектов
-function generateFood() {
-food.x = Math.floor(Math.random() * tileCountX);
-food.y = Math.floor(Math.random() * tileCountY);
-// Проверка, чтобы не упало на змейку
-if (snake.some(s => s.x === food.x && s.y === food.y)) generateFood();
-}
-function generateCough() {
-if (coughs.length >= 5) return; // Ограничение на количество кашля на поле
-let newCough = {
-x: Math.floor(Math.random() * tileCountX),
-y: Math.floor(Math.random() * tileCountY),
-type: Math.random() > 0.5 ? 'dry' : 'wet'
-};
-// Проверка на пересечения
-if (snake.some(s => s.x === newCough.x && s.y === newCough.y) || (food.x === newCough.x && food.y === newCough.y)) {
-generateCough();
-return;
-}
-coughs.push(newCough);
-}
-function generateRengalin() {
-rengalin = {
-x: Math.floor(Math.random() * tileCountX),
-y: Math.floor(Math.random() * tileCountY)
-};
-if (snake.some(s => s.x === rengalin.x && s.y === rengalin.y)) generateRengalin();
-}
-// Отрисовка графики на холсте Canvas
-function draw() {
-// Очистка экрана
-ctx.fillStyle = '#FFFFFF';
-ctx.fillRect(0, 0, canvas.width, canvas.height);
-// Рисуем сетку (тонкие линии)
-ctx.strokeStyle = '#F1F5F9';
-ctx.lineWidth = 1;
-for (let i = 0; i < tileCountX; i++) {
-ctx.beginPath(); ctx.moveTo(i * gridSize, 0); ctx.lineTo(i * gridSize, canvas.height); ctx.stroke();
-ctx.beginPath(); ctx.moveTo(0, i * gridSize); ctx.lineTo(canvas.width, i * gridSize); ctx.stroke();
-}
-// 1. Отрисовка обычной еды (белая таблетка с красным крестиком)
-ctx.save();
-ctx.shadowColor = 'rgba(0,0,0,0.05)';
-ctx.shadowBlur = 4;
-ctx.fillStyle = '#F8FAFC';
-ctx.strokeStyle = '#CBD5E1';
-ctx.lineWidth = 1.5;
-// Круглая таблетка
-ctx.beginPath();
-ctx.arc(food.x * gridSize + gridSize/2, food.y * gridSize + gridSize/2, gridSize/2 - 2, 0, Math.PI * 2);
-ctx.fill(); ctx.stroke();
-// Красный маленький крестик внутри
-ctx.strokeStyle = 'var(--rengalin-red)';
-ctx.lineWidth = 1.5;
-ctx.beginPath();
-let cx = food.x * gridSize + gridSize/2; let cy = food.y * gridSize + gridSize/2;
-ctx.moveTo(cx - 3, cy); ctx.lineTo(cx + 3, cy); ctx.moveTo(cx, cy - 3); ctx.lineTo(cx, cy + 3);
-ctx.stroke();
-ctx.restore();
-// 2. Отрисовка маркеров кашля
-coughs.forEach(c => {
-ctx.save();
-let cx = c.x * gridSize + gridSize/2;
-let cy = c.y * gridSize + gridSize/2;
-if (c.type === 'dry') {
-// Сухой кашель: Красный колючий маркер
-ctx.fillStyle = 'var(--rengalin-red)';
-drawStar(cx, cy, 5, gridSize/2 - 2, gridSize/4);
-} else {
-// Влажный кашель: Сине-зеленый скользкий маркер (капля)
-ctx.fillStyle = '#79B443';
-ctx.beginPath();
-ctx.arc(cx, cy, gridSize/2 - 3, 0, Math.PI2);
-ctx.fill();
-ctx.fillStyle = '#00A0E2';
-ctx.beginPath();
-ctx.arc(cx - 2, cy - 2, gridSize/4, 0, Math.PI2);
-ctx.fill();
-}
-ctx.restore();
-});
-// 3. Отрисовка Ренгалина (Красно-белая коробочка)
-if (rengalin) {
-ctx.save();
-let rx = rengalin.x * gridSize + 2;
-let ry = rengalin.y * gridSize + 2;
-let rw = gridSize - 4;
-ctx.fillStyle = '#FFFFFF';
-ctx.fillRect(rx, ry, rw, rw);
-ctx.strokeStyle = '#DDD';
-ctx.strokeRect(rx, ry, rw, rw);
-// Красная фирменная полоса Ренгалина наполовину коробки
-ctx.fillStyle = 'var(--rengalin-red)';
-ctx.fillRect(rx, ry, rw / 2, rw);
-// Буква Р по центру
-ctx.fillStyle = '#333';
-ctx.font = 'bold 10px sans-serif';
-ctx.textAlign = 'center';
-ctx.textBaseline = 'middle';
-ctx.fillText('R', rx + rw/2, ry + rw/2);
-ctx.restore();
-}
-// 4. Отрисовка Змейки
-snake.forEach((segment, index) => {
-ctx.save();
-let isHead = index === 0;
-if (isShielded) {
-// Супер-сила: неоновый золотой / ярко-красный
-ctx.fillStyle = isHead ? 'var(--rengalin-red)' : '#FFD700';
-ctx.shadowColor = '#FFD700';
-ctx.shadowBlur = 8;
-} else if (isSick) {
-// Болезнь: блёклая серая змейка
-ctx.fillStyle = isHead ? '#94A3B8' : '#E2E8F0';
-// Эффект дрожания при болезни
-if(Math.random() > 0.5) {
-segment.x += (Math.random() * 0.05 - 0.025);
-}
-} else {
-// Обычное состояние: голова красная, тело разноцветное (в стиле Ренгалина)
-if (isHead) {
-ctx.fillStyle = 'var(--rengalin-red)';
-} else {
-ctx.fillStyle = bodyColors[(index - 1) % bodyColors.length];
-}
-}
-ctx.beginPath();
-let r = isHead ? gridSize/2 - 1 : gridSize/2 - 3;
-ctx.arc(segment.x * gridSize + gridSize/2, segment.y * gridSize + gridSize/2, r, 0, Math.PI * 2);
-ctx.fill();
-ctx.restore();
-});
-}
-// Утилита отрисовки колючки (звезды) для сухого кашля
-function drawStar(cx, cy, spikes, outerRadius, innerRadius) {
-let rot = Math.PI / 2 * 3; let x = cx; let y = cy; let step = Math.PI / spikes;
-ctx.beginPath(); ctx.moveTo(cx, cy - outerRadius);
-for (let i = 0; i < spikes; i++) {
-x = cx + Math.cos(rot) * outerRadius; y = cy + Math.sin(rot) * outerRadius; ctx.lineTo(x, y); rot += step;
-x = cx + Math.cos(rot) * innerRadius; y = cy + Math.sin(rot) * innerRadius; ctx.lineTo(x, y); rot += step;
-}
-ctx.lineTo(cx, cy - outerRadius); ctx.closePath(); ctx.fill();
-}
-// Уведомления и плашки
-function showAlert(title, desc) {
-const banner = document.getElementById('alert-banner');
-document.getElementById('alert-title').innerText = title;
-document.getElementById('alert-desc').innerText = desc;
-banner.classList.add('show');
-}
-function hideAlert() {
-document.getElementById('alert-banner').classList.remove('show');
-}
-function updateStatusBadge(text) {
-const badge = document.getElementById('status-badge');
-if (text) {
-badge.innerText = text;
-badge.classList.add('active');
-} else {
-badge.innerText = 'Защита неактивна';
-badge.classList.remove('active');
-}
-}
-// Окончание игры
-function gameOver() {
-if(gameInterval) clearInterval(gameInterval);
-if (score > bestScore) {
-bestScore = score;
-localStorage.setItem('rengalin_best', bestScore);
-}
-document.getElementById('final-score').innerText = score;
-document.getElementById('final-destroyed').innerText = destroyedCoughs;
-document.getElementById('final-shield').innerText = Math.round(totalShieldTime);
-document.getElementById('best-score').innerText = bestScore;
-document.getElementById('game-interface').classList.add('hidden');
-document.getElementById('gameover-screen').classList.remove('hidden');
-}
-// ОБРАБОТКА УПРАВЛЕНИЯ
-// 1. Клавиатура (для тестов на ПК)
-window.addEventListener('keydown', e => {
-switch(e.key) {
-case 'ArrowUp': if (velocity.y !== 1) nextVelocity = { x: 0, y: -1 }; break;
-case 'ArrowDown': if (velocity.y !== -1) nextVelocity = { x: 0, y: 1 }; break;
-case 'ArrowLeft': if (velocity.x !== 1) nextVelocity = { x: -1, y: 0 }; break;
-case 'ArrowRight': if (velocity.x !== -1) nextVelocity = { x: 1, y: 0 }; break;
-}
-});
-// 2. Свайпы для смартфонов
-let touchStartX = 0;
-let touchStartY = 0;
-window.addEventListener('touchstart', e => {
-touchStartX = e.changedTouches[0].screenX;
-touchStartY = e.changedTouches[0].screenY;
-}, { passive: true });
-window.addEventListener('touchend', e => {
-let touchEndX = e.changedTouches[0].screenX;
-let touchEndY = e.changedTouches[0].screenY;
-let dx = touchEndX - touchStartX;
-let dy = touchEndY - touchStartY;
-// Определяем, какое движение длиннее — горизонтальное или вертикальное
-if (Math.abs(dx) > Math.abs(dy)) {
-// Горизонтальный свайп
-if (Math.abs(dx) > 30) { // Минимальный свайп 30px
-if (dx > 0 && velocity.x !== -1) nextVelocity = { x: 1, y: 0 };
-else if (dx < 0 && velocity.x !== 1) nextVelocity = { x: -1, y: 0 };
-}
-} else {
-// Вертикальный свайп
-if (Math.abs(dy) > 30) {
-if (dy > 0 && velocity.y !== -1) nextVelocity = { x: 0, y: 1 };
-else if (dy < 0 && velocity.y !== 1) nextVelocity = { x: -0, y: -1 };
-}
-}
-}, { passive: true });
-// Обработчики кликов по экранам интерфейса
-document.getElementById('start-btn').addEventListener('click', () => {
-document.getElementById('menu-screen').classList.add('hidden');
-document.getElementById('game-interface').classList.remove('hidden');
-initGame();
-});
-document.getElementById('restart-btn').addEventListener('click', () => {
-document.getElementById('gameover-screen').classList.add('hidden');
-document.getElementById('game-interface').classList.remove('hidden');
-initGame();
-});
+        width = Math.floor(width / gridSize) * gridSize;
+        if (width > 420) width = 420; // Ограничение для больших экранов
+        
+        canvas.width = width;
+        canvas.height = width; // Поле всегда квадратное
+        
+        tileCountX = canvas.width / gridSize;
+        tileCountY = canvas.height / gridSize;
+    }
+
+    // Инициализация и сброс параметров для новой игры
+    function initGame() {
+        resizeCanvas();
+        
+        // Начальная позиция змейки по центру поля
+        const startX = Math.floor(tileCountX / 2);
+        const startY = Math.floor(tileCountY / 2);
+        
+        snake = [
+            { x: startX, y: startY },
+            { x: startX - 1, y: startY },
+            { x: startX - 2, y: startY }
+        ];
+        
+        // Начальное движение вправо
+        velocity = { x: 1, y: 0 };
+        nextVelocity = { x: 1, y: 0 };
+        
+        // Сброс метрик текущей сессии
+        score = 0;
+        destroyedCoughs = 0;
+        totalShieldTime = 0;
+        isSick = false;
+        isShielded = false;
+        rengalin = null;
+        coughs = [];
+        currentSpeed = baseSpeed;
+        
+        // Обновление UI
+        document.getElementById('score-val').innerText = score;
+        updateStatusBadge();
+        hideAlert();
+        
+        // Спавн первых игровых объектов
+        generateFood();
+        generateCough(); // Первый маркер сухого кашля
+        generateCough(); // Второй маркер влажного кашля
+
+        // Сброс старого таймера и запуск чистого игрового цикла
+        if (gameInterval) clearTimeout(gameInterval);
+        gameInterval = setTimeout(gameLoop, currentSpeed);
+    }
+
+    // Главный игровой цикл (вызывается на каждом шаге змейки)
+    function gameLoop() {
+        // Фиксируем направление, выбранное игроком на этом шаге
+        velocity = { ...nextVelocity };
+
+        // Рассчитываем координаты новой головы
+        const head = { x: snake[0].x + velocity.x, y: snake[0].y + velocity.y };
+
+        // Проверка столкновения со стенами или собственным хвостом
+        if (head.x < 0 || head.x >= tileCountX || head.y < 0 || head.y >= tileCountY || checkTailCollision(head)) {
+            gameOver();
+            return;
+        }
+
+        // Добавляем новую голову в начало массива змейки
+        snake.unshift(head);
+
+        // Обработка таймеров состояний (болезнь / защита)
+        handleTimers();
+
+        let ateSomething = false;
+
+        // 1. Проверка: съели ли мы обычную еду (здоровье)?
+        if (head.x === food.x && head.y === food.y) {
+            score += 10;
+            document.getElementById('score-val').innerText = score;
+            generateFood();
+            ateSomething = true;
+            
+            // Чем больше змейка, тем выше шанс появления нового кашля на поле
+            if (Math.random() < 0.35) generateCough();
+        }
+
+        // 2. Проверка: наехали ли мы на маркеры кашля?
+        for (let i = coughs.length - 1; i >= 0; i--) {
+            if (head.x === coughs[i].x && head.y === coughs[i].y) {
+                if (isShielded) {
+                    // Ренгалин активен: змейка уничтожает кашель и получает тройные очки!
+                    score += 30;
+                    destroyedCoughs++;
+                    document.getElementById('score-val').innerText = score;
+                    coughs.splice(i, 1); // Удаляем этот маркер
+                    generateCough();     // Спавним новый в другом месте
+                } else if (!isSick) {
+                    // Если защиты нет и змейка еще не болеет — она заражается
+                    triggerSickness(coughs[i].type);
+                }
+            }
+        }
+
+        // 3. Проверка: подобрали ли мы упаковку Ренгалина?
+        if (rengalin && head.x === rengalin.x && head.y === rengalin.y) {
+            triggerShield();
+            rengalin = null;
+        }
+
+        // Если на этом шаге змейка ничего не съела, убираем последний сегмент хвоста
+        if (!ateSomething) {
+            snake.pop();
+        }
+
+        // Особая механика Ренгалин: при болезни без защиты хвост постепенно усыхает
+        if (isSick && !isShielded && snake.length > 2) {
+            if (Math.random() < 0.15) { // 15% шанс уменьшения хвоста на каждом шаге болезни
+                snake.pop();
+                // Если кашель «съел» всю змейку до критического минимума — проигрыш
+                if (snake.length <= 1) {
+                    gameOver();
+                    return;
+                }
+            }
+        }
+
+        // Отрисовываем обновленный кадр
+        draw();
+        
+        // Рекурсивный вызов следующего шага с текущей скоростью
+        gameInterval = setTimeout(gameLoop, currentSpeed);
+    }
+
+    // Проверка врезания головы в элементы своего тела
+    function checkTailCollision(head) {
+        for (let i = 1; i < snake.length; i++) {
+            if (snake[i].x === head.x && snake[i].y === head.y) return true;
+        }
+        return false;
+    }
+
+    // Управление временем действия Ренгалина и симптомов
+    function handleTimers() {
+        if (isShielded) {
+            shieldTimer -= currentSpeed;
+            totalShieldTime += (currentSpeed / 1000);
+            updateStatusBadge(`🛡️ Ренгалин: ${Math.ceil(shieldTimer / 1000)}с`);
+            
+            if (shieldTimer <= 0) {
+                isShielded = false;
+                // Если действие защиты вышло, а таймер старой болезни еще шел — возвращаем замедление
+                currentSpeed = isSick ? baseSpeed * 1.6 : baseSpeed;
+                updateStatusBadge(isSick ? '🤒 Кашель атакует!' : null);
+            }
+        } else if (isSick) {
+            sickTimer -= currentSpeed;
+            if (sickTimer <= 0) {
+                isSick = false;
+                currentSpeed = baseSpeed; // Восстанавливаем нормальную скорость
+                hideAlert();
+                updateStatusBadge();
+            }
+        }
+    }
+
+    // Активация симптомов кашля
+    function triggerSickness(type) {
+        isSick = true;
+        isShielded = false;
+        sickTimer = 7000; // Болезнь длится 7 секунд
+        currentSpeed = baseSpeed * 1.6; // Змейка сильно замедляется из-за кашля
+        
+        const title = type === 'dry' ? 'Симптом: Сухой кашель!' : 'Симптом: Влажный кашель!';
+        showAlert(title, 'Иммунитет тает. Скорее найди упаковку Ренгалина!');
+        updateStatusBadge('🤒 Кашель атакует!');
+        
+        // Гарантированно выкидываем на поле Ренгалин для спасения
+        if (!rengalin) generateRengalin();
+    }
+
+    // Активация супер-силы препарата Ренгалин
+    function triggerShield() {
+        isSick = false;
+        isShielded = true;
+        shieldTimer = 6000; // Универсальная защита на 6 секунд
+        currentSpeed = baseSpeed * 0.85; // Змейка ускоряется (выздоравливает)
+        
+        showAlert('Ренгалин вылечил кашель!', 'Универсальное действие против любого кашля!');
+        updateStatusBadge('🛡️ Защита Ренгалин');
+    }
+
+    // Генерация координат объектов (с защитой от спавна друг в друга)
+    function generateFood() {
+        food.x = Math.floor(Math.random() * tileCountX);
+        food.y = Math.floor(Math.random() * tileCountY);
+        if (snake.some(s => s.x === food.x && s.y === food.y)) generateFood();
+    }
+
+    function generateCough() {
+        if (coughs.length >= 4) return; // Не перегружаем поле врагами
+        let newCough = {
+            x: Math.floor(Math.random() * tileCountX),
+            y: Math.floor(Math.random() * tileCountY),
+            type: Math.random() > 0.5 ? 'dry' : 'wet' // 50% сухой, 50% влажный кашель
+        };
+        
+        const hitSnake = snake.some(s => s.x === newCough.x && s.y === newCough.y);
+        const hitFood = (food.x === newCough.x && food.y === newCough.y);
+        
+        if (hitSnake || hitFood) {
+            generateCough();
+            return;
+        }
+        coughs.push(newCough);
+    }
+
+    function generateRengalin() {
+        rengalin = {
+            x: Math.floor(Math.random() * tileCountX),
+            y: Math.floor(Math.random() * tileCountY)
+        };
+        if (snake.some(s => s.x === rengalin.x && s.y === rengalin.y) || (food.x === rengalin.x && food.y === rengalin.y)) {
+            generateRengalin();
+        }
+    }
+// ОТРИСОВКА ГРАФИКИ НА ХОЛСТЕ CANVAS
+    function draw() {
+        // Очистка экрана и заливка светлым «аптечным» фоном
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Рисуем сетку игрового поля (тонкие аккуратные линии)
+        ctx.strokeStyle = '#F1F5F9';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < tileCountX; i++) {
+            ctx.beginPath(); ctx.moveTo(i * gridSize, 0); ctx.lineTo(i * gridSize, canvas.height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, i * gridSize); ctx.lineTo(canvas.width, i * gridSize); ctx.stroke();
+        }
+
+        // 1. Отрисовка обычной еды (белая круглая таблетка с красным крестиком)
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.04)';
+        ctx.shadowBlur = 4;
+        ctx.fillStyle = '#F8FAFC';
+        ctx.strokeStyle = '#CBD5E1';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(food.x * gridSize + gridSize/2, food.y * gridSize + gridSize/2, gridSize/2 - 2, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        
+        // Маленький красный медицинский крестик внутри таблетки
+        ctx.strokeStyle = 'var(--rengalin-red)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        let cx = food.x * gridSize + gridSize/2; 
+        let cy = food.y * gridSize + gridSize/2;
+        ctx.moveTo(cx - 3, cy); ctx.lineTo(cx + 3, cy); ctx.moveTo(cx, cy - 3); ctx.lineTo(cx, cy + 3);
+        ctx.stroke();
+        ctx.restore();
+
+        // 2. Отрисовка маркеров кашля (препятствий)
+        coughs.forEach(c => {
+            ctx.save();
+            let ccx = c.x * gridSize + gridSize/2;
+            let ccy = c.y * gridSize + gridSize/2;
+            
+            if (c.type === 'dry') {
+                // Сухой кашель: Красный колючий маркер (символ першения)
+                ctx.fillStyle = 'var(--rengalin-red)';
+                drawStar(ccx, ccy, 5, gridSize/2 - 1, gridSize/4);
+            } else {
+                // Влажный кашель: Сине-зеленый скользкий маркер (символ мокроты)
+                ctx.fillStyle = '#79B443';
+                ctx.beginPath();
+                ctx.arc(ccx, ccy, gridSize/2 - 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#00A0E2';
+                ctx.beginPath();
+                ctx.arc(ccx - 2, ccy - 2, gridSize/4 + 1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        });
+
+        // 3. Отрисовка Ренгалина (Красно-белая фирменная упаковка)
+        if (rengalin) {
+            ctx.save();
+            let rx = rengalin.x * gridSize + 2;
+            let ry = rengalin.y * gridSize + 2;
+            let rw = gridSize - 4;
+            
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(rx, ry, rw, rw);
+            ctx.strokeStyle = '#E2E8F0';
+            ctx.strokeRect(rx, ry, rw, rw);
+            
+            // Левая красная акцентная половина коробочки Ренгалин
+            ctx.fillStyle = 'var(--rengalin-red)';
+            ctx.fillRect(rx, ry, rw / 2, rw);
+            
+            // Символическая буква 'R' по центру коробки
+            ctx.fillStyle = '#333333';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('R', rx + rw/2, ry + rw/2);
+            ctx.restore();
+        }
+
+        // 4. Отрисовка Змейки (Иммунитета)
+        snake.forEach((segment, index) => {
+            ctx.save();
+            let isHead = index === 0;
+            
+            if (isShielded) {
+                // Под действием Ренгалина: сияющая супер-сила (неоновый алый + золото)
+                ctx.fillStyle = isHead ? 'var(--rengalin-red)' : '#FFD700';
+                ctx.shadowColor = '#FFD700';
+                ctx.shadowBlur = 8;
+            } else if (isSick) {
+                // Болезнь (кашель): блёклая грязно-серая змейка
+                ctx.fillStyle = isHead ? '#94A3B8' : '#E2E8F0';
+            } else {
+                // Обычное здоровое состояние: фирменные цвета Ренгалина
+                if (isHead) {
+                    ctx.fillStyle = 'var(--rengalin-red)'; // Красная голова
+                } else {
+                    // Разноцветное тело (синий, оранжевый, зеленый) как силуэты на коробке
+                    ctx.fillStyle = bodyColors[(index - 1) % bodyColors.length];
+                }
+            }
+
+            ctx.beginPath();
+            let radius = isHead ? gridSize/2 - 1 : gridSize/2 - 2.5;
+            ctx.arc(segment.x * gridSize + gridSize/2, segment.y * gridSize + gridSize/2, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
+    }
+
+    // Вспомогательная функция для отрисовки колючки (сухой кашель)
+    function drawStar(cx, cy, spikes, outerRadius, innerRadius) {
+        let rot = Math.PI / 2 * 3; let x = cx; let y = cy; let step = Math.PI / spikes;
+        ctx.beginPath(); ctx.moveTo(cx, cy - outerRadius);
+        for (let i = 0; i < spikes; i++) {
+            x = cx + Math.cos(rot) * outerRadius; y = cy + Math.sin(rot) * outerRadius; ctx.lineTo(x, y); rot += step;
+            x = cx + Math.cos(rot) * innerRadius; y = cy + Math.sin(rot) * innerRadius; ctx.lineTo(x, y); rot += step;
+        }
+        ctx.lineTo(cx, cy - outerRadius); ctx.closePath(); ctx.fill();
+    }
+
+    // УВЕДОМЛЕНИЯ И ИНТЕРФЕЙСНЫЕ ПЛАШКИ
+    function showAlert(title, desc) {
+        const banner = document.getElementById('alert-banner');
+        document.getElementById('alert-title').innerText = title;
+        document.getElementById('alert-desc').innerText = desc;
+        banner.classList.add('show');
+    }
+    
+    function hideAlert() {
+        document.getElementById('alert-banner').classList.remove('show');
+    }
+
+    function updateStatusBadge(text) {
+        const badge = document.getElementById('status-badge');
+        if (text) {
+            badge.innerText = text;
+            badge.classList.add('active');
+        } else {
+            badge.innerText = 'Защита неактивна';
+            badge.classList.remove('active');
+        }
+    }
+
+    // ЭКРАН GAME OVER (ПРОИГРЫШ)
+    function gameOver() {
+        if (gameInterval) clearTimeout(gameInterval);
+        
+        // Сохранение рекорда в локальную память телефона
+        if (score > bestScore) {
+            bestScore = score;
+            localStorage.setItem('rengalin_best', bestScore);
+        }
+
+        // Заполнение статистики на экране конца игры
+        document.getElementById('final-score').innerText = score;
+        document.getElementById('final-destroyed').innerText = destroyedCoughs;
+        document.getElementById('final-shield').innerText = Math.round(totalShieldTime);
+        document.getElementById('best-score').innerText = bestScore;
+
+        // Переключение экранов
+        document.getElementById('game-interface').classList.add('hidden');
+        document.getElementById('gameover-screen').classList.remove('hidden');
+    }
+
+    // ОБРАБОТКА УПРАВЛЕНИЯ (MOBILE + PC)
+    
+    // 1. Клавиатура (стрелочки для тестирования в браузере на ПК)
+    window.addEventListener('keydown', e => {
+        switch(e.key) {
+            case 'ArrowUp':    if (velocity.y !== 1)  nextVelocity = { x: 0, y: -1 }; break;
+            case 'ArrowDown':  if (velocity.y !== -1) nextVelocity = { x: 0, y: 1 };  break;
+            case 'ArrowLeft':  if (velocity.x !== 1)  nextVelocity = { x: -1, y: 0 }; break;
+            case 'ArrowRight': if (velocity.x !== -1) nextVelocity = { x: 1, y: 0 };  break;
+        }
+    });
+
+    // 2. Высокоточное управление свайпами для смартфонов
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    window.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    window.addEventListener('touchend', e => {
+        let touchEndX = e.changedTouches[0].screenX;
+        let touchEndY = e.changedTouches[0].screenY;
+        
+        let dx = touchEndX - touchStartX;
+        let dy = touchEndY - touchStartY;
+
+        // Определяем доминирующий вектор свайпа (горизонтальный или вертикальный)
+        if (Math.abs(dx) > Math.abs(dy)) {
+            // Горизонтальный свайп
+            if (Math.abs(dx) > 30) { // Чувствительность свайпа (минимальный порог 30px)
+                if (dx > 0 && velocity.x !== -1) nextVelocity = { x: 1, y: 0 };      // Свайп вправо
+                else if (dx < 0 && velocity.x !== 1) nextVelocity = { x: -1, y: 0 }; // Свайп влево
+            }
+        } else {
+            // Вертикальный свайп
+            if (Math.abs(dy) > 30) {
+                if (dy > 0 && velocity.y !== -1) nextVelocity = { x: 0, y: 1 };       // Свайп вниз
+                else if (dy < 0 && velocity.y !== 1) nextVelocity = { x: 0, y: -1 };  // Свайп вверх
+            }
+        }
+    }, { passive: true });
+
+    // ОБРАБОТЧИКИ НАЖАТИЙ НА КНОПКИ МЕНЮ
+    document.getElementById('start-btn').addEventListener('click', () => {
+        document.getElementById('menu-screen').classList.add('hidden');
+        document.getElementById('game-interface').classList.remove('hidden');
+        initGame();
+    });
+
+    document.getElementById('restart-btn').addEventListener('click', () => {
+        document.getElementById('gameover-screen').classList.add('hidden');
+        document.getElementById('game-interface').classList.remove('hidden');
+        initGame();
+    });
+</script>
+</body>
+</html>
