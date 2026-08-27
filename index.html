@@ -229,14 +229,58 @@
             border-bottom: 1px dashed var(--rengalin-red);
         }
 
-        /* Инструкция по свайпам для десктопа (просто инфо) */
-        .controls-hint {
-            padding: 10px;
-            text-align: center;
-            font-size: 12px;
-            color: #94A3B8;
+               /* Блок джойстика под игровым полем */
+        .joystick-container {
+            padding: 15px;
             background: #FFFFFF;
             border-top: 1px solid #EFEFEF;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .joy-row {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            width: 100%;
+        }
+
+        .joy-btn {
+            width: 60px;
+            height: 60px;
+            background: #F1F5F9;
+            border: 2px solid #E2E8F0;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            outline: none;
+            transition: background 0.1s, transform 0.1s;
+            /* Защита от выделения текста при быстром клике */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Эффект нажатия на стрелочку */
+        .joy-btn:active {
+            background: var(--rengalin-red);
+            border-color: var(--rengalin-red);
+            transform: scale(0.92);
+        }
+
+        /* Цвет стрелочек внутри кнопок */
+        .joy-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: #475569;
+            transition: fill 0.1s;
+        }
+
+        .joy-btn:active svg {
+            fill: #FFFFFF;
         }
     </style>
 </head>
@@ -269,7 +313,31 @@
             <canvas id="gameCanvas"></canvas>
         </div>
         
-        <div class="controls-hint">Управляйте свайпами по экрану или стрелочками</div>
+                <!-- Блок джойстика вместо текстовой подсказки -->
+        <div class="joystick-container">
+            <!-- Верхняя кнопка -->
+            <div class="joy-row">
+                <button class="joy-btn" id="joy-up">
+                    <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
+                </button>
+            </div>
+            <!-- Левая и Правая кнопки -->
+            <div class="joy-row" style="gap: 60px;">
+                <button class="joy-btn" id="joy-left">
+                    <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg>
+                </button>
+                <button class="joy-btn" id="joy-right">
+                    <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+                </button>
+            </div>
+            <!-- Нижняя кнопка -->
+            <div class="joy-row">
+                <button class="joy-btn" id="joy-down">
+                    <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+                </button>
+            </div>
+        </div>
+
     </div>
 
     <!-- 3. Экран Game Over -->
