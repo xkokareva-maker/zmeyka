@@ -279,10 +279,10 @@
         <button class="btn" id="start-btn">ИГРАТЬ</button>
     </div>
 
-    <!-- 2. Игровой Экран -->
-   <div id="game-interface" class="hidden">
+     <!-- 2. Игровой Экран (Исправлено: панель очков теперь строго внутри игры) -->
+    <div id="game-interface" class="hidden">
         
-        <!-- Игровое поле теперь идет самым первым сверху -->
+        <!-- Игровое поле сверху -->
         <div id="canvas-container">
             <div id="alert-banner">
                 <h4 id="alert-title">Внимание: кашель атакует!</h4>
@@ -291,7 +291,7 @@
             <canvas id="gameCanvas"></canvas>
         </div>
 
-        <!-- Перенесенная вниз панель очков и статуса -->
+        <!-- Панель очков теперь показывается только здесь -->
         <div class="top-bar">
             <div class="score-box">Очки: <span id="score-val">0</span></div>
             <div id="status-badge" class="status-badge">Защита неактивна</div>
