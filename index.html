@@ -711,27 +711,15 @@
         ctx.restore();
 
         // 2. Отрисовка маркеров кашля (препятствий)
-        coughs.forEach(c => {
-            ctx.save();
+       coughs.forEach(c => {
             let ccx = c.x * gridSize + gridSize/2;
             let ccy = c.y * gridSize + gridSize/2;
-            
             if (c.type === 'dry') {
-                // Сухой кашель: Красный колючий маркер (символ першения)
-                ctx.fillStyle = 'var(--rengalin-red)';
-                drawCoughVirus(ccx, ccy, gridSize / 2 - 2);
+                drawCoughVirus(ccx, ccy, gridSize / 2 - 2); // Наша сухая колючка
             } else {
-                // Влажный кашель: Сине-зеленый скользкий маркер (символ мокроты)
-                ctx.fillStyle = '#79B443';
-                ctx.beginPath();
-                ctx.arc(ccx, ccy, gridSize/2 - 2, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#00A0E2';
-                ctx.beginPath();
-                ctx.arc(ccx - 2, ccy - 2, gridSize/4 + 1, 0, Math.PI * 2);
-                ctx.fill();
+                // ПОЧИНЕНО: Теперь здесь вызывается пугающий смайлик-капля для влажного кашля
+                drawWetCoughMonster(ccx, ccy, gridSize / 2 - 1);
             }
-            ctx.restore();
         });
 
         // 3. Отрисовка Ренгалина (Красно-белая фирменная упаковка)
@@ -804,48 +792,70 @@
 
     // Вспомогательная функция для отрисовки колючки (сухой кашель)
    // Новая функция отрисовки понятного колючего вируса (вместо drawStar)
-    function drawCoughVirus(cx, cy, radius) {
+    function drawWetCoughMonster(cx, cy, radius) {
         ctx.save();
-        
-        // 1. Рисуем шипы (острые палочки с кружочками на концах, торчащие во все стороны)
-        ctx.strokeStyle = '#990000'; // Темно-красный цвет для шипов
-        ctx.lineWidth = 2.5;
-        
-        const spikesCount = 8; // 8 выразительных шипов по кругу
-        for (let i = 0; i < spikesCount; i++) {
-            let angle = (i * Math.PI * 2) / spikesCount;
-            // Координаты конца шипа
-            let rx = cx + Math.cos(angle) * (radius + 3);
-            let ry = cy + Math.sin(angle) * (radius + 3);
-            
-            // Линия шипа
-            ctx.beginPath();
-            ctx.moveTo(cx, cy);
-            ctx.lineTo(rx, ry);
-            ctx.stroke();
-            
-            // Опасная головка на конце шипа
-            ctx.fillStyle = 'var(--rengalin-red)';
-            ctx.beginPath();
-            ctx.arc(rx, ry, 2, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        
-        // 2. Рисуем центральное пульсирующее тело колючки
-        ctx.fillStyle = 'var(--rengalin-red)'; // Ярко-красное ядро
+
+        // 1. Рисуем форму склизкой капли (зеленый Ренгалин-цвет)
+        ctx.fillStyle = '#79B443'; 
         ctx.beginPath();
-        ctx.arc(cx, cy, radius - 2, 0, Math.PI * 2);
+        // Рисуем каплю: вытягиваем верхнюю точку чуть выше центра
+        ctx.moveTo(cx, cy - radius - 2); 
+        // Правая сторона и округлое основание
+        ctx.bezierCurveTo(cx + radius, cy - radius, cx + radius + 2, cy + radius, cx, cy + radius);
+        // Левая сторона капли
+        ctx.bezierCurveTo(cx - radius - 2, cy + radius, cx - radius, cy - radius, cx, cy - radius - 2);
         ctx.fill();
-        
-        // 3. Блик для объема, чтобы колючка выглядела трехмерной и сочной
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+
+        // Тонкий темно-зеленый контур монстрика для четкости
+        ctx.strokeStyle = '#44701F';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // 2. Глаза злого смайлика (прищуренные сердитые дуги или галочки)
+        ctx.strokeStyle = '#1E293B'; // Темно-серый цвет для мимики
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+
+        // Левый глаз (сердитая бровь/глаз наискосок)
         ctx.beginPath();
-        ctx.arc(cx - 3, cy - 3, 2, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.moveTo(cx - 5, cy - 3);
+        ctx.lineTo(cx - 2, cy - 1);
+        ctx.stroke();
+
+        // Правый глаз
+        ctx.beginPath();
+        ctx.moveTo(cx + 5, cy - 3);
+        ctx.lineTo(cx + 2, cy - 1);
+        ctx.stroke();
+
+        // 3. Зубастая пугающая ухмылка
+        ctx.fillStyle = '#FFFFFF'; // Белые зубы
+        ctx.strokeStyle = '#1E293B';
+        ctx.lineWidth = 1;
         
+        // Рисуем открытый рот
+        ctx.beginPath();
+        ctx.arc(cx, cy + 3, 4, 0, Math.PI); // Полукруг внизу
+        ctx.lineTo(cx - 4, cy + 3); // Замыкаем верхнюю линию рта
+        ctx.fill();
+        ctx.stroke();
+
+        // Маленькие грозные зубки (вертикальные черточки)
+        ctx.strokeStyle = '#1E293B';
+        ctx.beginPath();
+        ctx.moveTo(cx - 2, cy + 3); ctx.lineTo(cx - 2, cy + 5);
+        ctx.moveTo(cx, cy + 3); ctx.lineTo(cx, cy + 6);
+        ctx.moveTo(cx + 2, cy + 3); ctx.lineTo(cx + 2, cy + 5);
+        ctx.stroke();
+
+        // 4. Небольшой водянистый блик на макушке, чтобы капля казалась склизкой
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.beginPath();
+        ctx.arc(cx + 3, cy - 4, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+
         ctx.restore();
     }
-
     // УВЕДОМЛЕНИЯ И ИНТЕРФЕЙСНЫЕ ПЛАШКИ
     function showAlert(title, desc) {
         const banner = document.getElementById('alert-banner');
