@@ -691,12 +691,12 @@
 // ОТРИСОВКА ГРАФИКИ НА ХОЛСТЕ CANVAS
     function draw() {
         // Очистка экрана и заливка светлым «аптечным» фоном
-        ctx.fillStyle = '#FFFFFF';
+        ctx.fillStyle = '#FFF0F2';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // Рисуем сетку игрового поля (тонкие аккуратные линии)
-        ctx.strokeStyle = '#F1F5F9';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = '#FFD1D7';
+        ctx.lineWidth = 1,5;
         for (let i = 0; i < tileCountX; i++) {
             ctx.beginPath(); ctx.moveTo(i * gridSize, 0); ctx.lineTo(i * gridSize, canvas.height); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(0, i * gridSize); ctx.lineTo(canvas.width, i * gridSize); ctx.stroke();
