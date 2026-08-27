@@ -109,31 +109,30 @@
             margin-top: 15px;
         }
 
- /* Обновленный игровой интерфейс с отступом от шторки телефона */
+/* Еще больше опускаем весь интерфейс от шторки телефона */
         #game-interface {
             display: flex;
             flex-direction: column;
             height: 100%;
             width: 100%;
-            /* Добавляем безопасный отступ сверху, чтобы текст не залезал под часы и статус-бар */
-            padding-top: 25px; 
+            padding-top: 45px; /* УВЕЛИЧЕНО С 25px ДО 45px: шапка опустится еще ниже */
         }
 
         .top-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 20px;
+            padding: 14px 22px; /* Чуть увеличили внутренние отступы панели */
             background: var(--panel-bg);
-            /* Делаем небольшую тень, чтобы визуально отделить верхнюю панель */
             border-bottom: 1px solid #EFEFEF;
             box-shadow: 0 2px 10px rgba(0,0,0,0.02);
             z-index: 11;
         }
 
+        /* УВЕЛИЧЕННЫЙ ШРИФТ ОЧКОВ */
         .score-box {
-            font-size: 18px;
-            font-weight: 700;
+            font-size: 22px; /* Увеличено с 18px до 22px */
+            font-weight: 800; /* Сделали текст еще жирнее */
         }
         .score-box span {
             color: var(--rengalin-red);
