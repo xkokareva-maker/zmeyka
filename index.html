@@ -279,31 +279,31 @@
     </div>
 
     <!-- 2. Игровой Экран -->
-    <div id="game-interface" class="hidden">
-        <div class="top-bar">
-            <div class="score-box">Очки: <span id="score-val">0</span></div>
-            <div id="status-badge" class="status-badge">Защита неактивна</div>
-        </div>
+   <div id="game-interface" class="hidden">
         
+        <!-- Игровое поле теперь идет самым первым сверху -->
         <div id="canvas-container">
-            <!-- Всплывающий баннер симптомов -->
             <div id="alert-banner">
                 <h4 id="alert-title">Внимание: кашель атакует!</h4>
                 <p id="alert-desc">Найди упаковку Ренгалина и верни змейке супер-силу.</p>
             </div>
             <canvas id="gameCanvas"></canvas>
         </div>
+
+        <!-- Перенесенная вниз панель очков и статуса -->
+        <div class="top-bar">
+            <div class="score-box">Очки: <span id="score-val">0</span></div>
+            <div id="status-badge" class="status-badge">Защита неактивна</div>
+        </div>
         
-                <!-- Блок джойстика вместо текстовой подсказки -->
+        <!-- Джойстик управления -->
         <div class="joystick-container">
-            <!-- Верхняя кнопка -->
             <div class="joy-row">
                 <button class="joy-btn" id="joy-up">
                     <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
                 </button>
             </div>
-            <!-- Левая и Правая кнопки -->
-            <div class="joy-row" style="gap: 60px;">
+            <div class="joy-row" style="gap: 50px;">
                 <button class="joy-btn" id="joy-left">
                     <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg>
                 </button>
@@ -311,13 +311,13 @@
                     <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
                 </button>
             </div>
-            <!-- Нижняя кнопка -->
             <div class="joy-row">
                 <button class="joy-btn" id="joy-down">
                     <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
                 </button>
             </div>
         </div>
+    </div>
 
     </div>
 
