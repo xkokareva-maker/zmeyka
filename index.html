@@ -597,9 +597,10 @@
         draw();
         
         // Рекурсивный вызов следующего шага с текущей скоростью
-        gameInterval = setTimeout(gameLoop, currentSpeed);
+        if (!document.getElementById('game-interface').classList.contains('hidden')) {
+            gameInterval = setTimeout(gameLoop, currentSpeed);
     }
-
+ }
     // Проверка врезания головы в элементы своего тела
     function checkTailCollision(head) {
         for (let i = 1; i < snake.length; i++) {
@@ -907,18 +908,25 @@
         if (gameInterval) clearTimeout(gameInterval);
         
         // Сохранение рекорда в локальную память телефона
-        if (score > bestScore) {
-            bestScore = score;
-            localStorage.setItem('rengalin_best', bestScore);
+      function gameOver() {
+        // Принудительно уничтожаем таймер шагов в момент проигрыша
+        if (gameInterval) {
+            clearTimeout(gameInterval);
+            gameInterval = null;
         }
-
-        // Заполнение статистики на экране конца игры
+        
+        if (score > bestScore) { 
+            bestScore = score; 
+            localStorage.setItem('rengalin_best', bestScore); 
+        }
+        
+        // Заполняем финальный экран данными
         document.getElementById('final-score').innerText = score;
         document.getElementById('final-destroyed').innerText = destroyedCoughs;
         document.getElementById('final-shield').innerText = Math.round(totalShieldTime);
         document.getElementById('best-score').innerText = bestScore;
-
-        // Переключение экранов
+        
+        // Переключаем экраны интерфейса
         document.getElementById('game-interface').classList.add('hidden');
         document.getElementById('gameover-screen').classList.remove('hidden');
     }
