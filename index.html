@@ -362,15 +362,15 @@
 </div>
 
 <script>
-  // НАСТРОЙКИ СЕТКИ И СКОРОСТИ (ИСПРАВЛЕНО)
+      // НАСТРОЙКИ СЕТКИ И СКОРОСТИ (УМЕНЬШАЕМ КОЛИЧЕСТВО КЛЕТОК ДЛЯ МАКСИМАЛЬНОГО МАСШТАБА)
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Жестко задаем размер сетки 11х11
-    const gridCount = 11; 
-    let gridSize; // Размер одной клетки в пикселях (высчитается автоматически)
+    const gridCount = 11; // Было 15. Теперь сетка 11х11 — клетки станут огромными!
+    let gridSize; 
     let tileCountX = gridCount;
     let tileCountY = gridCount;
+
 
     // Игровые переменные
     let snake = [];
