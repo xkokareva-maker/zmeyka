@@ -754,27 +754,39 @@
         });
 
         // 3. Отрисовка Ренгалина (Красно-белая фирменная упаковка)
-        if (rengalin) {
+       if (rengalin) {
             ctx.save();
-            let rx = rengalin.x * gridSize + 2;
-            let ry = rengalin.y * gridSize + 2;
-            let rw = gridSize - 4;
+            let rx = rengalin.x * gridSize + 3;
+            let ry = rengalin.y * gridSize + 3;
+            let rw = (gridSize * 2) - 6; // Прямоугольник шириной в 2 ячейки сети
+            let rh = gridSize - 6;       // Высота в 1 ячейку
             
+            // Белый фон прямоугольного блока
             ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(rx, ry, rw, rw);
-            ctx.strokeStyle = '#E2E8F0';
-            ctx.strokeRect(rx, ry, rw, rw);
+            ctx.beginPath();
+            ctx.roundRect ? ctx.roundRect(rx, ry, rw, rh, 5) : ctx.fillRect(rx, ry, rw, rh);
+            ctx.fill();
             
-            // Левая красная акцентная половина коробочки Ренгалин
+            // Аккуратная серая обводка для объема пачки
+            ctx.strokeStyle = '#D1D5DB';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            
+            // Левая ярко-красная полоса Ренгалина
             ctx.fillStyle = 'var(--rengalin-red)';
-            ctx.fillRect(rx, ry, rw / 2, rw);
+            ctx.beginPath();
+            let stripeW = rw * 0.25; // Четверть пачки слева — красная
+            ctx.roundRect ? ctx.roundRect(rx, ry, stripeW, rh, {tl: 5, bl: 5, tr: 0, br: 0}) : ctx.fillRect(rx, ry, stripeW, rh);
+            ctx.fill();
             
-            // Символическая буква 'R' по центру коробки
-            ctx.fillStyle = '#333333';
-            ctx.font = 'bold 10px sans-serif';
-            ctx.textAlign = 'center';
+            // Крупное горизонтальное название "Ренгалин" на белой части пачки
+            ctx.fillStyle = '#1E293B';
+            ctx.font = `bold ${Math.floor(rh * 0.45)}px sans-serif`; // Текст идеально вписывается по высоте блока
+            ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
-            ctx.fillText('R', rx + rw/2, ry + rw/2);
+            // Выводим текст с небольшим отступом от красной полосы
+            ctx.fillText('Ренгалин', rx + stripeW + 8, ry + rh / 2);
+            
             ctx.restore();
         }
 
