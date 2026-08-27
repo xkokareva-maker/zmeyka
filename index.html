@@ -567,7 +567,7 @@
         }
 
         // 3. Проверка: подобрали ли мы упаковку Ренгалина?
-        if (rengalin && head.x === rengalin.x && head.y === rengalin.y) {
+      if (rengalin && head.y === rengalin.y && (head.x === rengalin.x || head.x === rengalin.x + 1)) {
             triggerShield();
             rengalin = null;
         }
@@ -680,11 +680,17 @@
     }
 
     function generateRengalin() {
+        // Выбираем X так, чтобы блок шириной в 2 клетки не вылезал за правый край (gridCount - 1)
         rengalin = {
-            x: Math.floor(Math.random() * tileCountX),
-            y: Math.floor(Math.random() * tileCountY)
+            x: Math.floor(Math.random() * (gridCount - 1)),
+            y: Math.floor(Math.random() * gridCount)
         };
-        if (snake.some(s => s.x === rengalin.x && s.y === rengalin.y) || (food.x === rengalin.x && food.y === rengalin.y)) {
+        
+        // Проверяем, свободна ли клетка (x, y) и соседняя справа (x + 1, y)
+        const hitSnake = snake.some(s => (s.x === rengalin.x && s.y === rengalin.y) || (s.x === rengalin.x + 1 && s.y === rengalin.y));
+        const hitFood = (food.x === rengalin.x && food.y === rengalin.y) || (food.x === rengalin.x + 1 && food.y === rengalin.y);
+        
+        if (hitSnake || hitFood) {
             generateRengalin();
         }
     }
