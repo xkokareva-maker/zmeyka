@@ -474,21 +474,27 @@
         draw();
         gameInterval = setTimeout(gameLoop, currentSpeed);
     }
-   // Старт игры (с оптимизированным спавном на поле 11х11)
+   // Обновленный старт игры с защитой от зависания на рестарте
     function initGame() {
+        // 1. ПРИНУДИТЕЛЬНО очищаем любые старые таймеры, чтобы они не накладывались
+        if (gameInterval) {
+            clearTimeout(gameInterval);
+            gameInterval = null;
+        }
+
         resizeCanvas();
         
-        // Смещаем стартовую позицию чуть ближе к центру для компактного поля
         const startX = 4;
         const startY = Math.floor(gridCount / 2);
         
-        // Змейка появляется из 3-х сегментов
+        // 2. Сбрасываем массивы и переменные в исходное состояние
         snake = [
             { x: startX, y: startY },
             { x: startX - 1, y: startY },
             { x: startX - 2, y: startY }
         ];
         
+        // Жестко фиксируем стартовое направление, сбрасывая буфер джойстика
         velocity = { x: 1, y: 0 };
         nextVelocity = { x: 1, y: 0 };
         
@@ -501,18 +507,19 @@
         coughs = [];
         currentSpeed = baseSpeed;
         
+        // 3. Обновляем интерфейс
         document.getElementById('score-val').innerText = score;
         updateStatusBadge();
         hideAlert();
         
+        // 4. Генерируем объекты только после полного сброса
         generateFood();
         generateCough(); 
         generateCough(); 
 
-        if (gameInterval) clearTimeout(gameInterval);
-        gameInterval = setTimeout(gameLoop, currentSpeed);
+        // 5. Запускаем чистый, изолированный игровой цикл
+        gameLoop();
     }
-
     // Главный игровой цикл (вызывается на каждом шаге змейки)
     function gameLoop() {
         // Фиксируем направление, выбранное игроком на этом шаге
