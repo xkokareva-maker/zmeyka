@@ -362,20 +362,23 @@
 </div>
 
 <script>
-    // Настройки игры
+  // НАСТРОЙКИ СЕТКИ И СКОРОСТИ (ИСПРАВЛЕНО)
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    const gridSize = 20; 
-    let tileCountX, tileCountY;
+    // Жестко задаем размер сетки 15х15 (вместо мелкой 25х25)
+    const gridCount = 15; 
+    let gridSize; // Размер одной клетки в пикселях (высчитается автоматически)
+    let tileCountX = gridCount;
+    let tileCountY = gridCount;
 
     // Игровые переменные
     let snake = [];
     let velocity = { x: 0, y: 0 };
     let nextVelocity = { x: 0, y: 0 };
     let food = { x: 0, y: 0, colors: [] };
-    let coughs = []; // Массив объектов кашля {x, y, type: 'dry'|'wet'}
-    let rengalin = null; // Объект Ренгалина {x, y}
+    let coughs = []; 
+    let rengalin = null; 
 
     let score = 0;
     let bestScore = localStorage.getItem('rengalin_best') || 0;
@@ -388,12 +391,13 @@
     let sickTimer = 0;
     let shieldTimer = 0;
     let gameInterval = null;
-    let baseSpeed = 140; // Скорость игры (мс на один шаг)
+    
+    // СКОРОСТЬ: Плавный старт для комфортной игры
+    let baseSpeed = 220; 
     let currentSpeed = baseSpeed;
 
     // Цвета тела змейки (в стиле силуэтов Ренгалина)
     const bodyColors = ['#00A0E2', '#F39200', '#79B443'];
-
     // Инициализация размеров холста под экран мобильного
     function resizeCanvas() {
         const container = document.getElementById('canvas-container');
