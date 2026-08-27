@@ -398,20 +398,27 @@
 
     // Цвета тела змейки (в стиле силуэтов Ренгалина)
     const bodyColors = ['#00A0E2', '#F39200', '#79B443'];
-    // Инициализация размеров холста под экран мобильного
+
+    // === ВОТ ЭТОТ БЛОК ФУНКЦИИ Я ЗАМЕНИЛ НА ПРАВИЛЬНЫЙ ===
     function resizeCanvas() {
         const container = document.getElementById('canvas-container');
+        
+        // Берем доступную ширину экрана с небольшим отступом
         let width = container.clientWidth - 20;
-// Округляем до кратного размеру ячейки сетки
-        width = Math.floor(width / gridSize) * gridSize;
-        if (width > 420) width = 420; // Ограничение для больших экранов
+        
+        // Ограничиваем максимальный размер поля для больших экранов и ПК
+        if (width > 400) width = 400; 
+        
+        // Округляем общую ширину так, чтобы она идеально делилась на 15 клеток
+        width = Math.floor(width / gridCount) * gridCount;
         
         canvas.width = width;
         canvas.height = width; // Поле всегда квадратное
         
-        tileCountX = canvas.width / gridSize;
-        tileCountY = canvas.height / gridSize;
+        // Автоматически вычисляем крупный размер одной клетки
+        gridSize = canvas.width / gridCount;
     }
+    // === КОНЕЦ ЗАМЕНЕННОГО БЛОКА ===
 
     // Инициализация и сброс параметров для новой игры
     function initGame() {
