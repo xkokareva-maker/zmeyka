@@ -1,995 +1,442 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ренгалин-Змейка</title>
-    <style>
-        :root {
-            --rengalin-red: #E30613;
-            --bg-color: #F4F6F9;
-            --panel-bg: #FFFFFF;
-            --text-color: #333333;
-            --blue: #00A0E2;
-            --orange: #F39200;
-            --green: #79B443;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow: hidden;
-        }
-
-        #app-container {
-            width: 100%;
-            max-width: 450px;
-            height: 100vh;
-            background: #FFFFFF;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 0 20px rgba(0,0,0,0.05);
-        }
-
-        /* Экраны */
-        .screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #FFFFFF;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .screen.hidden {
-            display: none !important;
-            z-index: 1;
-        }
-
-        /* Главное меню */
-        .logo-area {
-            margin-bottom: 40px;
-        }
-        .logo-title {
-            font-size: 32px;
-            font-weight: 800;
-            color: var(--rengalin-red);
-            letter-spacing: -1px;
-            margin-bottom: 10px;
-        }
-        .logo-subtitle {
-            font-size: 16px;
-            color: #666;
-            line-height: 1.4;
-        }
-
-        /* Кнопки */
-        .btn {
-            background: var(--rengalin-red);
-            color: #FFFFFF;
-            border: none;
-            padding: 16px 40px;
-            font-size: 18px;
-            font-weight: 700;
-            border-radius: 30px;
-            cursor: pointer;
-            width: 80%;
-            transition: transform 0.1s ease;
-            box-shadow: 0 4px 15px rgba(227, 6, 19, 0.3);
-        }
-        .btn:active {
-            transform: scale(0.97);
-        }
-        .btn-secondary {
-            background: #FFFFFF;
-            color: var(--text-color);
-            border: 2px solid #DDD;
-            box-shadow: none;
-            margin-top: 15px;
-        }
-
-/* Еще больше опускаем весь интерфейс от шторки телефона */
-        #game-interface {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            width: 100%;
-            padding-top: 45px; /* УВЕЛИЧЕНО С 25px ДО 45px: шапка опустится еще ниже */
-        }
-
-       .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 14px 22px;
-            background: var(--panel-bg);
-            border-top: 1px solid #EFEFEF; 
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.01);
-            z-index: 11;
-            width: 100%;
-        }
-
-        /* УВЕЛИЧЕННЫЙ ШРИФТ ОЧКОВ */
-        .score-box {
-            font-size: 22px; /* Увеличено с 18px до 22px */
-            font-weight: 800; /* Сделали текст еще жирнее */
-        }
-        .score-box span {
-            color: var(--rengalin-red);
-        }
-
-        /* Обновленный контейнер поля: опускаем его чуть ниже */
-        #canvas-container {
-            flex: 1;
-            position: relative;
-            background: #F8FAFC;
-            display: flex;
-            justify-content: center;
-            /* Центрируем, но даем отступ сверху, чтобы поле не прижималось к очкам */
-            align-items: center; 
-            padding: 20px 10px 10px 10px; 
-        }
-        canvas {
-            background: #FFFFFF;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-            border: 1px solid #E2E8F0;
-            max-width: 100%;
-            max-height: 100%;
-        }
-
-        /* Плашка предупреждения */
-     #alert-banner {
-            position: absolute;
-            /* Размещаем плашку чуть выше верхней границы игрового поля */
-            bottom: calc(100% + 5px); 
-            left: 0;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.98);
-            border-left: 5px solid var(--rengalin-red);
-            padding: 10px 14px;
-            border-radius: 6px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            border: 1px solid #E2E8F0;
-            border-left: 5px solid var(--rengalin-red);
-            
-            /* Эффект плавного проявления, чтобы не дергать экран */
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(10px);
-            transition: opacity 0.2s ease, transform 0.2s ease;
-            z-index: 20;
-            text-align: left;
-        }
-
-        /* Когда плашке добавляется класс .show, она плавно встает на место */
-        #alert-banner.show {
-            opacity: 1;
-            pointer-events: auto;
-            transform: translateY(0);
-        }
-
-        #alert-banner h4 {
-            color: var(--rengalin-red);
-            font-size: 15px;
-            font-weight: 700;
-            margin-bottom: 2px;
-        }
-
-        #alert-banner p {
-            font-size: 13px;
-            color: #475569;
-            line-height: 1.3;
-        }
-        /* Маркетинговый блок */
-        .promo-banner {
-            background: #FDF2F2;
-            border: 1px solid #FDE2E2;
-            border-radius: 16px;
-            padding: 15px;
-            margin-bottom: 25px;
-            width: 100%;
-        }
-        .promo-text {
-            font-size: 14px;
-            color: #444;
-            line-height: 1.4;
-            margin-bottom: 12px;
-        }
-        .promo-link {
-            display: inline-block;
-            color: var(--rengalin-red);
-            font-weight: 700;
-            text-decoration: none;
-            font-size: 14px;
-            border-bottom: 1px dashed var(--rengalin-red);
-        }
-
-             /* Блок увеличенного джойстика */
-        .joystick-container {
-            padding: 20px 15px; /* Увеличили отступы вокруг джойстика */
-            background: #FFFFFF;
-            border-top: 1px solid #EFEFEF;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px; /* Увеличили вертикальный зазор между рядами кнопок */
-            width: 100%;
-        }
-
-        .joy-row {
-            display: flex;
-            justify-content: center;
-            gap: 50px; /* Было 40px. Раздвигаем левую и правую кнопки шире */
-            width: 100%;
-        }
-
-        .joy-btn {
-            width: 75px;  /* УВЕЛИЧЕНО С 60 ДО 75: кнопки стали большими и удобными */
-            height: 75px; /* УВЕЛИЧЕНО С 60 ДО 75 */
-            background: #F1F5F9;
-            border: 2.5px solid #E2E8F0; /* Сделали рамку чуть толще для солидности */
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            outline: none;
-            transition: background 0.1s, transform 0.1s;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* Эффект нажатия на стрелочку */
-        .joy-btn:active {
-            background: var(--rengalin-red);
-            border-color: var(--rengalin-red);
-            transform: scale(0.90); /* Чуть более глубокий клик */
-        }
-
-        /* Размер стрелочек внутри кнопок */
-        .joy-btn svg {
-            width: 36px;  /* УВЕЛИЧЕНО С 24 ДО 36: сами стрелки стали крупнее и заметнее */
-            height: 36px; /* УВЕЛИЧЕНО С 24 ДО 36 */
-            fill: #475569;
-            transition: fill 0.1s;
-        }
-
-        .joy-btn:active svg {
-            fill: #FFFFFF;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <title>Ренгалин-Змейка</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root{
+      --red:#E30613;
+      --pink:#F9DDE1;
+      --bg:#F4F6F9;
+      --text:#20242A;
+      --muted:#69717D;
+      --grid:#DDE2E8;
+      --blue:#6AAFE6;
+      --purple:#8D6CCB;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:#fff;color:var(--text)}
+    body{display:flex;justify-content:center}
+    button{font:inherit;border:0;cursor:pointer}
+    .app{
+      width:min(100%,520px);
+      min-height:100vh;
+      padding:24px 18px calc(24px + env(safe-area-inset-bottom));
+      background:#fff;
+    }
+    .screen{display:none;min-height:calc(100vh - 48px);flex-direction:column}
+    .screen.active{display:flex}
+    .menu{align-items:center;justify-content:center;text-align:center}
+    .brand-mark{
+      width:92px;height:92px;border-radius:26px;
+      background:linear-gradient(145deg,#fff,#f6d9dd);
+      border:3px solid var(--red);
+      display:flex;align-items:center;justify-content:center;
+      margin-bottom:22px;box-shadow:0 10px 30px rgba(227,6,19,.12);
+      font-size:42px;
+    }
+    h1{font-size:42px;line-height:1;margin:0 0 10px;font-weight:800}
+    .subtitle{font-size:19px;color:var(--muted);margin:0 0 36px}
+    .primary,.secondary{
+      width:100%;max-width:340px;padding:17px 24px;border-radius:16px;
+      font-size:18px;font-weight:800;
+    }
+    .primary{background:var(--red);color:#fff;box-shadow:0 8px 20px rgba(227,6,19,.22)}
+    .secondary{background:#fff;color:var(--red);border:2px solid var(--red)}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+    .score{font-size:17px;font-weight:800}
+    .timer{font-size:14px;color:var(--muted)}
+    .status{
+      min-height:28px;text-align:center;font-weight:800;color:var(--red);
+      font-size:14px;margin-bottom:7px;
+    }
+    .board-wrap{width:100%;max-width:440px;margin:0 auto}
+    canvas{
+      display:block;width:100%;height:auto;aspect-ratio:1/1;
+      background:var(--bg);border:3px solid var(--red);border-radius:14px;
+      touch-action:none;
+    }
+    .controls{
+      width:190px;height:190px;margin:18px auto 0;position:relative;
+    }
+    .control{
+      position:absolute;width:58px;height:58px;border-radius:16px;
+      background:#fff;border:2px solid var(--red);color:var(--red);
+      font-size:27px;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.06);
+    }
+    .control:active{transform:scale(.94);background:#fff0f1}
+    .up{top:0;left:66px}.left{top:66px;left:0}.right{top:66px;right:0}.down{bottom:0;left:66px}
+    .game-over{align-items:center;text-align:center;justify-content:center}
+    .game-over h2{font-size:30px;margin:0 0 10px}
+    .game-over .lead{color:var(--muted);margin:0 0 24px}
+    .stats{
+      width:100%;max-width:340px;display:grid;grid-template-columns:1fr 1fr;
+      gap:10px;margin-bottom:24px;
+    }
+    .stat{padding:15px;border:1px solid var(--grid);border-radius:14px;background:var(--bg)}
+    .stat b{display:block;font-size:24px;margin-bottom:4px}
+    .stat span{font-size:12px;color:var(--muted)}
+    .banner{
+      width:100%;max-width:420px;margin:24px auto 0;padding:20px;
+      border-radius:18px;background:#fff;border:1px solid #eceff2;
+      box-shadow:0 8px 25px rgba(20,30,40,.07);
+      text-align:left;
+    }
+    .banner strong{display:block;font-size:18px;line-height:1.25;margin-bottom:10px}
+    .banner p{font-size:14px;line-height:1.4;color:var(--muted);margin:0 0 15px}
+    .banner a{
+      display:block;text-align:center;text-decoration:none;background:var(--red);
+      color:#fff;padding:13px 12px;border-radius:12px;font-weight:800;font-size:14px;
+    }
+    .hint{font-size:12px;color:#8a929d;text-align:center;margin:14px 0 0}
+    @media (max-height:700px){
+      .app{padding-top:14px}
+      .controls{margin-top:10px}
+      .screen{min-height:calc(100vh - 28px)}
+    }
+  </style>
 </head>
 <body>
+<div class="app">
+  <section id="menu" class="screen menu active">
+    <div class="brand-mark">🐍</div>
+    <h1>Змейка</h1>
+    <p class="subtitle">Освободи организм от кашля!</p>
+    <button id="playBtn" class="primary">ИГРАТЬ</button>
+  </section>
 
-<div id="app-container">
-
-    <!-- 1. Экран Главного Меню -->
-    <div id="menu-screen" class="screen">
-        <div class="logo-area">
-            <h1 class="logo-title">Ренгалин-Змейка</h1>
-            <p class="logo-subtitle">Очисти организм от сухого и влажного кашля!</p>
-        </div>
-        <button class="btn" id="start-btn">ИГРАТЬ</button>
+  <section id="game" class="screen">
+    <div class="topbar">
+      <div class="score">Очки: <span id="score">0</span></div>
+      <div class="timer">Время: <span id="time">0</span> сек</div>
     </div>
-
-     <!-- 2. Игровой Экран (Исправлено: панель очков теперь строго внутри игры) -->
-    <div id="game-interface" class="hidden">
-        
-        <!-- Игровое поле сверху -->
-        <div id="canvas-container">
-            <!-- Плашка привязана сюда и будет гореть ровно над рамкой canvas -->
-            <div id="alert-banner">
-                <h4 id="alert-title">Внимание: кашель атакует!</h4>
-                <p id="alert-desc">Найди упаковку Ренгалина и верни змейке супер-силу.</p>
-            </div>
-            <canvas id="gameCanvas"></canvas>
-        </div>
-
-        <!-- Панель очков теперь показывается только здесь -->
-        <div class="top-bar">
-            <div class="score-box">Очки: <span id="score-val">0</span></div>
-            <div id="status-badge" class="status-badge">Защита неактивна</div>
-        </div>
-        
-        <!-- Джойстик управления -->
-        <div class="joystick-container">
-            <div class="joy-row">
-                <button class="joy-btn" id="joy-up">
-                    <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
-                </button>
-            </div>
-            <div class="joy-row" style="gap: 50px;">
-                <button class="joy-btn" id="joy-left">
-                    <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg>
-                </button>
-                <button class="joy-btn" id="joy-right">
-                    <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
-                </button>
-            </div>
-            <div class="joy-row">
-                <button class="joy-btn" id="joy-down">
-                    <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
-                </button>
-            </div>
-        </div>
+    <div id="status" class="status"></div>
+    <div class="board-wrap"><canvas id="board" width="440" height="440"></canvas></div>
+    <div class="controls" aria-label="Управление">
+      <button class="control up" data-dir="up">↑</button>
+      <button class="control left" data-dir="left">←</button>
+      <button class="control right" data-dir="right">→</button>
+      <button class="control down" data-dir="down">↓</button>
     </div>
+    <p class="hint">Также можно управлять свайпами по игровому полю</p>
+  </section>
 
+  <section id="over" class="screen game-over">
+    <h2>Кашель оказался сильнее...</h2>
+    <p class="lead">Но можно попробовать ещё раз!</p>
+    <div class="stats">
+      <div class="stat"><b id="finalSymptoms">0</b><span>симптомов уничтожено</span></div>
+      <div class="stat"><b id="finalTime">0</b><span>секунд борьбы</span></div>
     </div>
+    <button id="retryBtn" class="secondary">Попробовать снова</button>
 
-    <!-- 3. Экран Game Over -->
-    <div id="gameover-screen" class="screen hidden">
-        <h2 style="font-size: 26px; margin-bottom: 10px; color: #333;">Кашель оказался сильнее...</h2>
-        
-        <div style="margin: 20px 0; font-size: 16px; color: #555; text-align: left; width: 100%; max-width: 280px; margin: 20px auto;">
-            <p style="margin-bottom: 8px;">🏆 Очков набрано: <b id="final-score" style="color:var(--rengalin-red)">0</b></p>
-            <p style="margin-bottom: 8px;">🦠 Кашля уничтожено: <b id="final-destroyed">0</b></p>
-            <p style="margin-bottom: 8px;">⏳ Секунд защиты: <b id="final-shield">0</b></p>
-            <p>⭐ Лучший результат: <b id="best-score">0</b></p>
-        </div>
-
-        <div class="promo-banner">
-            <p class="promo-text"><b>Ренгалин</b> — универсальное решение против сухого и влажного кашля для взрослых и детей.</p>
-            <a href="https://rengalin.ru" target="_blank" class="promo-link">Подробнее о препарате и где купить</a>
-        </div>
-
-        <button class="btn" id="restart-btn">Попробовать снова</button>
+    <div class="banner">
+      <strong>Ренгалин — универсальное решение против сухого и влажного кашля для взрослых и детей с 3-х лет.</strong>
+      <p>Узнайте подробнее о препарате и где его купить.</p>
+      <a href="https://rengalin.com" target="_blank" rel="noopener">подробнее о препарате и где купить</a>
     </div>
-
+  </section>
 </div>
 
 <script>
-      // НАСТРОЙКИ СЕТКИ И СКОРОСТИ (УМЕНЬШАЕМ КОЛИЧЕСТВО КЛЕТОК ДЛЯ МАКСИМАЛЬНОГО МАСШТАБА)
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+(() => {
+  const tg = window.Telegram?.WebApp;
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    try { tg.setHeaderColor('#ffffff'); tg.setBackgroundColor('#ffffff'); } catch(e) {}
+  }
 
-    const gridCount = 11; // Было 15. Теперь сетка 11х11 — клетки станут огромными!
-    let gridSize; 
-    let tileCountX = gridCount;
-    let tileCountY = gridCount;
+  const SIZE = 11;
+  const START_SPEED = 360;
+  const BOOST_DURATION = 6000;
+  const DISEASE_SLOW_FACTOR = 2;
 
+  const menu = document.getElementById('menu');
+  const game = document.getElementById('game');
+  const over = document.getElementById('over');
+  const canvas = document.getElementById('board');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const timeEl = document.getElementById('time');
+  const statusEl = document.getElementById('status');
+  const finalSymptomsEl = document.getElementById('finalSymptoms');
+  const finalTimeEl = document.getElementById('finalTime');
 
-    // Игровые переменные
-    let snake = [];
-    let velocity = { x: 0, y: 0 };
-    let nextVelocity = { x: 0, y: 0 };
-    let food = { x: 0, y: 0, colors: [] };
-    let coughs = []; 
-    let rengalin = null; 
+  let snake, direction, nextDirection, food, cough, coughType, bonus;
+  let score, symptoms, startedAt, lastTick, lastMelt, animationId;
+  let disease = false, superPower = false, boostUntil = 0, gameRunning = false;
+  let touchStartX = 0, touchStartY = 0;
 
-    let score = 0;
-    let bestScore = localStorage.getItem('rengalin_best') || 0;
-    let destroyedCoughs = 0;
-    let totalShieldTime = 0;
+  function show(screen) {
+    [menu, game, over].forEach(s => s.classList.remove('active'));
+    screen.classList.add('active');
+  }
 
-    // Состояния змейки
-    let isSick = false;
-    let isShielded = false;
-    let sickTimer = 0;
-    let shieldTimer = 0;
-    let gameInterval = null;
-    
-    // СКОРОСТЬ: Плавный старт для комфортной игры
-    let baseSpeed = 220; 
-    let currentSpeed = baseSpeed;
+  function randomCell(excluded = []) {
+    const bad = new Set(excluded.map(p => `${p.x},${p.y}`));
+    const cells = [];
+    for (let y=0;y<SIZE;y++) for (let x=0;x<SIZE;x++)
+      if (!bad.has(`${x},${y}`)) cells.push({x,y});
+    return cells[Math.floor(Math.random()*cells.length)] || {x:5,y:5};
+  }
 
-    // Цвета тела змейки (в стиле силуэтов Ренгалина)
-    const bodyColors = ['#00A0E2', '#F39200', '#79B443'];
+  function placeObjects() {
+    const occupied = [...snake];
+    food = randomCell(occupied);
+    occupied.push(food);
+    cough = randomCell(occupied);
+    coughType = Math.random() < 0.5 ? 'dry' : 'wet';
+    occupied.push(cough);
+    bonus = null;
+  }
 
-   // Исправленное масштабирование поля под крупную сетку 11х11
-    function resizeCanvas() {
-        const container = document.getElementById('canvas-container');
-        let width = container.clientWidth - 20;
-        
-        if (width > 400) width = 400; 
-        
-        width = Math.floor(width / gridCount) * gridCount;
-        
-        canvas.width = width;
-        canvas.height = width; 
-        
-        gridSize = canvas.width / gridCount;
-        tileCountX = gridCount;
-        tileCountY = gridCount;
+  function startGame() {
+    cancelAnimationFrame(animationId);
+    snake = [{x:5,y:5},{x:4,y:5},{x:3,y:5}];
+    direction = {x:1,y:0};
+    nextDirection = {x:1,y:0};
+    score = 0; symptoms = 0;
+    disease = false; superPower = false; boostUntil = 0;
+    startedAt = performance.now();
+    lastTick = startedAt;
+    lastMelt = startedAt;
+    gameRunning = true;
+    placeObjects();
+    scoreEl.textContent = score;
+    timeEl.textContent = '0';
+    statusEl.textContent = '';
+    show(game);
+    draw();
+    animationId = requestAnimationFrame(loop);
+  }
+
+  function setDirection(dir) {
+    const map = {
+      up:{x:0,y:-1}, down:{x:0,y:1}, left:{x:-1,y:0}, right:{x:1,y:0}
+    };
+    const d = map[dir];
+    if (!d) return;
+    if (d.x === -direction.x && d.y === -direction.y) return;
+    if (d.x === -nextDirection.x && d.y === -nextDirection.y) return;
+    nextDirection = d;
+  }
+
+  function loop(now) {
+    if (!gameRunning) return;
+
+    timeEl.textContent = Math.floor((now - startedAt)/1000);
+
+    if (disease && !superPower && now - lastMelt >= 1000) {
+      const segments = Math.floor((now-lastMelt)/1000);
+      for(let i=0;i<segments && snake.length>2;i++) snake.pop();
+      lastMelt += segments*1000;
     }
 
-    // Исправленный главный игровой цикл (починено появление змейки)
-    function gameLoop() {
-        velocity = { ...nextVelocity };
-        
-        // ПОЧИНЕНО: теперь берется координата [0] (голова змейки)
-        const head = { x: snake[0].x + velocity.x, y: snake[0].y + velocity.y };
-
-        if (head.x < 0 || head.x >= gridCount || head.y < 0 || head.y >= gridCount || checkTailCollision(head)) {
-            gameOver();
-            return;
-        }
-
-        snake.unshift(head);
-        handleTimers();
-
-        let ateSomething = false;
-
-        if (head.x === food.x && head.y === food.y) {
-            score += 10;
-            document.getElementById('score-val').innerText = score;
-            generateFood();
-            ateSomething = true;
-            if (Math.random() < 0.35) generateCough();
-        }
-
-        for (let i = coughs.length - 1; i >= 0; i--) {
-            if (head.x === coughs[i].x && head.y === coughs[i].y) {
-                if (isShielded) {
-                    score += 30;
-                    destroyedCoughs++;
-                    document.getElementById('score-val').innerText = score;
-                    coughs.splice(i, 1);
-                    generateCough();
-                } else if (!isSick) {
-                    triggerSickness(coughs[i].type);
-                }
-            }
-        }
-
-        if (rengalin && head.x === rengalin.x && head.y === rengalin.y) {
-            triggerShield();
-            rengalin = null;
-        }
-
-        if (!ateSomething) {
-            snake.pop();
-        }
-
-        if (isSick && !isShielded && snake.length > 2) {
-            if (Math.random() < 0.15) {
-                snake.pop();
-                if (snake.length <= 1) {
-                    gameOver();
-                    return;
-                }
-            }
-        }
-
-        draw();
-        gameInterval = setTimeout(gameLoop, currentSpeed);
-    }
-   // Обновленный старт игры с защитой от зависания на рестарте
-    function initGame() {
-        // 1. ПРИНУДИТЕЛЬНО очищаем любые старые таймеры, чтобы они не накладывались
-        if (gameInterval) {
-            clearTimeout(gameInterval);
-            gameInterval = null;
-        }
-
-        resizeCanvas();
-        
-        const startX = 4;
-        const startY = Math.floor(gridCount / 2);
-        
-        // 2. Сбрасываем массивы и переменные в исходное состояние
-        snake = [
-            { x: startX, y: startY },
-            { x: startX - 1, y: startY },
-            { x: startX - 2, y: startY }
-        ];
-        
-        // Жестко фиксируем стартовое направление, сбрасывая буфер джойстика
-        velocity = { x: 1, y: 0 };
-        nextVelocity = { x: 1, y: 0 };
-        
-        score = 0;
-        destroyedCoughs = 0;
-        totalShieldTime = 0;
-        isSick = false;
-        isShielded = false;
-        rengalin = null;
-        coughs = [];
-        currentSpeed = baseSpeed;
-        
-        // 3. Обновляем интерфейс
-        document.getElementById('score-val').innerText = score;
-        updateStatusBadge();
-        hideAlert();
-        
-        // 4. Генерируем объекты только после полного сброса
-        generateFood();
-        generateCough(); 
-        generateCough(); 
-
-        // 5. Запускаем чистый, изолированный игровой цикл
-        gameLoop();
-    }
-    // Главный игровой цикл (вызывается на каждом шаге змейки)
-    function gameLoop() {
-        // Фиксируем направление, выбранное игроком на этом шаге
-        velocity = { ...nextVelocity };
-
-        // Рассчитываем координаты новой головы
-        const head = { x: snake[0].x + velocity.x, y: snake[0].y + velocity.y };
-
-        // Проверка столкновения со стенами или собственным хвостом
-        if (head.x < 0 || head.x >= tileCountX || head.y < 0 || head.y >= tileCountY || checkTailCollision(head)) {
-            gameOver();
-            return;
-        }
-
-        // Добавляем новую голову в начало массива змейки
-        snake.unshift(head);
-
-        // Обработка таймеров состояний (болезнь / защита)
-        handleTimers();
-
-        let ateSomething = false;
-
-        // 1. Проверка: съели ли мы обычную еду (здоровье)?
-        if (head.x === food.x && head.y === food.y) {
-            score += 10;
-            document.getElementById('score-val').innerText = score;
-            generateFood();
-            ateSomething = true;
-            
-            // Чем больше змейка, тем выше шанс появления нового кашля на поле
-            if (Math.random() < 0.35) generateCough();
-        }
-
-        // 2. Проверка: наехали ли мы на маркеры кашля?
-        for (let i = coughs.length - 1; i >= 0; i--) {
-            if (head.x === coughs[i].x && head.y === coughs[i].y) {
-                if (isShielded) {
-                    // Ренгалин активен: змейка уничтожает кашель и получает тройные очки!
-                    score += 30;
-                    destroyedCoughs++;
-                    document.getElementById('score-val').innerText = score;
-                    coughs.splice(i, 1); // Удаляем этот маркер
-                    generateCough();     // Спавним новый в другом месте
-                } else if (!isSick) {
-                    // Если защиты нет и змейка еще не болеет — она заражается
-                    triggerSickness(coughs[i].type);
-                }
-            }
-        }
-
-        // 3. Проверка: подобрали ли мы упаковку Ренгалина?
-      if (rengalin && head.y === rengalin.y && (head.x === rengalin.x || head.x === rengalin.x + 1)) {
-            triggerShield();
-            rengalin = null;
-        }
-
-        // Если на этом шаге змейка ничего не съела, убираем последний сегмент хвоста
-        if (!ateSomething) {
-            snake.pop();
-        }
-
-        // Особая механика Ренгалин: при болезни без защиты хвост постепенно усыхает
-        if (isSick && !isShielded && snake.length > 2) {
-            if (Math.random() < 0.15) { // 15% шанс уменьшения хвоста на каждом шаге болезни
-                snake.pop();
-                // Если кашель «съел» всю змейку до критического минимума — проигрыш
-                if (snake.length <= 1) {
-                    gameOver();
-                    return;
-                }
-            }
-        }
-
-        // Отрисовываем обновленный кадр
-        draw();
-        
-        // Рекурсивный вызов следующего шага с текущей скоростью
-        if (!document.getElementById('game-interface').classList.contains('hidden')) {
-            gameInterval = setTimeout(gameLoop, currentSpeed);
-    }
- }
-    // Проверка врезания головы в элементы своего тела
-    function checkTailCollision(head) {
-        for (let i = 1; i < snake.length; i++) {
-            if (snake[i].x === head.x && snake[i].y === head.y) return true;
-        }
-        return false;
+    if (superPower && now >= boostUntil) {
+      superPower = false;
+      statusEl.textContent = '';
     }
 
-    // Управление временем действия Ренгалина и симптомов
-    function handleTimers() {
-        if (isShielded) {
-            shieldTimer -= currentSpeed;
-            totalShieldTime += (currentSpeed / 1000);
-            updateStatusBadge(`🛡️ Ренгалин: ${Math.ceil(shieldTimer / 1000)}с`);
-            
-            if (shieldTimer <= 0) {
-                isShielded = false;
-                // Если действие защиты вышло, а таймер старой болезни еще шел — возвращаем замедление
-                currentSpeed = isSick ? baseSpeed * 1.6 : baseSpeed;
-                updateStatusBadge(isSick ? '🤒 Кашель атакует!' : null);
-            }
-        } else if (isSick) {
-            sickTimer -= currentSpeed;
-            if (sickTimer <= 0) {
-                isSick = false;
-                currentSpeed = baseSpeed; // Восстанавливаем нормальную скорость
-                hideAlert();
-                updateStatusBadge();
-            }
-        }
+    const speed = superPower ? 130 : (disease ? START_SPEED * DISEASE_SLOW_FACTOR : START_SPEED);
+
+    if (now - lastTick >= speed) {
+      lastTick = now;
+      update();
     }
 
-    // Активация симптомов кашля
-    function triggerSickness(type) {
-        isSick = true;
-        isShielded = false;
-        sickTimer = 7000; // Болезнь длится 7 секунд
-        currentSpeed = baseSpeed * 1.6; // Змейка сильно замедляется из-за кашля
-        
-        const title = type === 'dry' ? 'Симптом: Сухой кашель!' : 'Симптом: Влажный кашель!';
-        showAlert(title, 'Иммунитет тает. Скорее найди упаковку Ренгалина!');
-        updateStatusBadge('🤒 Кашель атакует!');
-        
-        // Гарантированно выкидываем на поле Ренгалин для спасения
-        if (!rengalin) generateRengalin();
+    draw();
+    animationId = requestAnimationFrame(loop);
+  }
+
+  function update() {
+    direction = nextDirection;
+    const head = {
+      x: snake[0].x + direction.x,
+      y: snake[0].y + direction.y
+    };
+
+    // Столкновение со стеной.
+    if (head.x < 0 || head.x >= SIZE || head.y < 0 || head.y >= SIZE) {
+      endGame(); return;
     }
 
-    // Активация супер-силы препарата Ренгалин
-    function triggerShield() {
-        isSick = false;
-        isShielded = true;
-        shieldTimer = 6000; // Универсальная защита на 6 секунд
-        currentSpeed = baseSpeed * 0.85; // Змейка ускоряется (выздоравливает)
-        
-        showAlert('Ренгалин вылечил кашель!', 'Универсальное действие против любого кашля!');
-        updateStatusBadge('🛡️ Защита Ренгалин');
+    // Столкновение с собственным телом.
+    if (snake.some((p,i) => i > 0 && p.x === head.x && p.y === head.y)) {
+      endGame(); return;
     }
 
-    // Генерация координат объектов (с защитой от спавна друг в друга)
-    function generateFood() {
-        food.x = Math.floor(Math.random() * tileCountX);
-        food.y = Math.floor(Math.random() * tileCountY);
-        if (snake.some(s => s.x === food.x && s.y === food.y)) generateFood();
+    snake.unshift(head);
+
+    if (food && head.x === food.x && head.y === food.y) {
+      score += 10;
+      food = randomCell([...snake, cough, ...(bonus ? [bonus] : [])]);
+    } else {
+      snake.pop();
     }
 
-    function generateCough() {
-        if (coughs.length >= 4) return; // Не перегружаем поле врагами
-        let newCough = {
-            x: Math.floor(Math.random() * tileCountX),
-            y: Math.floor(Math.random() * tileCountY),
-            type: Math.random() > 0.5 ? 'dry' : 'wet' // 50% сухой, 50% влажный кашель
-        };
-        
-        const hitSnake = snake.some(s => s.x === newCough.x && s.y === newCough.y);
-        const hitFood = (food.x === newCough.x && food.y === newCough.y);
-        
-        if (hitSnake || hitFood) {
-            generateCough();
-            return;
-        }
-        coughs.push(newCough);
+    if (cough && head.x === cough.x && head.y === cough.y) {
+      const eatenCoughType = coughType;
+      if (superPower) {
+        score += 20;
+        symptoms++;
+        cough = randomCell([...snake, food, ...(bonus ? [bonus] : [])]);
+        coughType = Math.random() < 0.5 ? 'dry' : 'wet';
+      } else {
+        becomeSick(eatenCoughType);
+        cough = randomCell([...snake, food]);
+        coughType = Math.random() < 0.5 ? 'dry' : 'wet';
+      }
     }
 
-    function generateRengalin() {
-        // Выбираем X так, чтобы блок шириной в 2 клетки не вылезал за правый край (gridCount - 1)
-        rengalin = {
-            x: Math.floor(Math.random() * (gridCount - 1)),
-            y: Math.floor(Math.random() * gridCount)
-        };
-        
-        // Проверяем, свободна ли клетка (x, y) и соседняя справа (x + 1, y)
-        const hitSnake = snake.some(s => (s.x === rengalin.x && s.y === rengalin.y) || (s.x === rengalin.x + 1 && s.y === rengalin.y));
-        const hitFood = (food.x === rengalin.x && food.y === rengalin.y) || (food.x === rengalin.x + 1 && food.y === rengalin.y);
-        
-        if (hitSnake || hitFood) {
-            generateRengalin();
-        }
+    if (bonus && head.x === bonus.x && head.y === bonus.y) {
+      heal();
+      bonus = null;
     }
-// ОТРИСОВКА ГРАФИКИ НА ХОЛСТЕ CANVAS
-    function draw() {
-        // Очистка экрана и заливка светлым «аптечным» фоном
-        ctx.fillStyle = '#FFF0F2';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Рисуем сетку игрового поля (тонкие аккуратные линии)
-        ctx.strokeStyle = '#FFD1D7';
-        ctx.lineWidth = 1,5;
-        for (let i = 0; i < tileCountX; i++) {
-            ctx.beginPath(); ctx.moveTo(i * gridSize, 0); ctx.lineTo(i * gridSize, canvas.height); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(0, i * gridSize); ctx.lineTo(canvas.width, i * gridSize); ctx.stroke();
-        }
+    scoreEl.textContent = score;
+  }
 
-        // 1. Отрисовка обычной еды (белая круглая таблетка с красным крестиком)
-        ctx.save();
-        ctx.shadowColor = 'rgba(0,0,0,0.04)';
-        ctx.shadowBlur = 4;
-        ctx.fillStyle = '#F8FAFC';
-        ctx.strokeStyle = '#CBD5E1';
-        ctx.lineWidth = 1.5;
+  function becomeSick(type) {
+    disease = true;
+    lastMelt = performance.now();
+    const coughName = type === 'dry' ? 'сухой' : 'влажный';
+    statusEl.textContent = 'Внимание: ' + coughName + ' кашель атакует!';
+    bonus = randomCell([...snake, food, cough]);
+  }
+
+  function heal() {
+    disease = false;
+    superPower = true;
+    boostUntil = performance.now() + BOOST_DURATION;
+    statusEl.textContent = 'Универсальное оружие Ренгалин — 6 секунд!';
+  }
+
+  function endGame() {
+    gameRunning = false;
+    cancelAnimationFrame(animationId);
+    finalSymptomsEl.textContent = symptoms;
+    finalTimeEl.textContent = Math.floor((performance.now()-startedAt)/1000);
+    show(over);
+  }
+
+  function roundRect(x,y,w,h,r) {
+    const rr = Math.min(r,w/2,h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr,y);
+    ctx.arcTo(x+w,y,x+w,y+h,rr);
+    ctx.arcTo(x+w,y+h,x,y+h,rr);
+    ctx.arcTo(x,y+h,x,y,rr);
+    ctx.arcTo(x,y,x+w,y,rr);
+    ctx.closePath();
+  }
+
+  function draw() {
+    const cell = canvas.width / SIZE;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    ctx.fillStyle = disease ? '#FCE9EC' : '#F4F6F9';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    ctx.strokeStyle = '#DDE2E8';
+    ctx.lineWidth = 1;
+    for(let i=1;i<SIZE;i++){
+      ctx.beginPath(); ctx.moveTo(i*cell,0); ctx.lineTo(i*cell,canvas.height); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,i*cell); ctx.lineTo(canvas.width,i*cell); ctx.stroke();
+    }
+
+    // Яблоко.
+    if (food) drawApple(food.x*cell, food.y*cell, cell);
+
+    // Кашель: бомба / капля.
+    if (cough) {
+      drawCough(cough.x*cell, cough.y*cell, cell, coughType === 'wet');
+    }
+
+    // Упаковка Ренгалина.
+    if (bonus) drawBonus(bonus.x*cell, bonus.y*cell, cell);
+
+    // Змейка.
+    for(let i=snake.length-1;i>=0;i--){
+      const p = snake[i];
+      const cx = p.x*cell + cell/2, cy = p.y*cell + cell/2;
+      if(i===0) drawHead(cx,cy,cell);
+      else {
         ctx.beginPath();
-        ctx.arc(food.x * gridSize + gridSize/2, food.y * gridSize + gridSize/2, gridSize/2 - 2, 0, Math.PI * 2);
-        ctx.fill(); ctx.stroke();
-        
-        // Маленький красный медицинский крестик внутри таблетки
-        ctx.strokeStyle = 'var(--rengalin-red)';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        let cx = food.x * gridSize + gridSize/2; 
-        let cy = food.y * gridSize + gridSize/2;
-        ctx.moveTo(cx - 3, cy); ctx.lineTo(cx + 3, cy); ctx.moveTo(cx, cy - 3); ctx.lineTo(cx, cy + 3);
-        ctx.stroke();
-        ctx.restore();
-
-        // 2. Отрисовка маркеров кашля (препятствий)
-       coughs.forEach(c => {
-            let ccx = c.x * gridSize + gridSize/2;
-            let ccy = c.y * gridSize + gridSize/2;
-            if (c.type === 'dry') {
-                drawCoughVirus(ccx, ccy, gridSize / 2 - 2); // Наша сухая колючка
-            } else {
-                // ПОЧИНЕНО: Теперь здесь вызывается пугающий смайлик-капля для влажного кашля
-                drawWetCoughMonster(ccx, ccy, gridSize / 2 - 1);
-            }
-        });
-
-        // 3. Отрисовка Ренгалина (Красно-белая фирменная упаковка)
-       if (rengalin) {
-            ctx.save();
-            let rx = rengalin.x * gridSize + 3;
-            let ry = rengalin.y * gridSize + 3;
-            let rw = (gridSize * 2) - 6; // Прямоугольник шириной в 2 ячейки сети
-            let rh = gridSize - 6;       // Высота в 1 ячейку
-            
-            // Белый фон прямоугольного блока
-            ctx.fillStyle = '#FFFFFF';
-            ctx.beginPath();
-            ctx.roundRect ? ctx.roundRect(rx, ry, rw, rh, 5) : ctx.fillRect(rx, ry, rw, rh);
-            ctx.fill();
-            
-            // Аккуратная серая обводка для объема пачки
-            ctx.strokeStyle = '#D1D5DB';
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
-            
-            // Левая ярко-красная полоса Ренгалина
-            ctx.fillStyle = 'var(--rengalin-red)';
-            ctx.beginPath();
-            let stripeW = rw * 0.25; // Четверть пачки слева — красная
-            ctx.roundRect ? ctx.roundRect(rx, ry, stripeW, rh, {tl: 5, bl: 5, tr: 0, br: 0}) : ctx.fillRect(rx, ry, stripeW, rh);
-            ctx.fill();
-            
-            // Крупное горизонтальное название "Ренгалин" на белой части пачки
-            ctx.fillStyle = '#1E293B';
-            ctx.font = `bold ${Math.floor(rh * 0.45)}px sans-serif`; // Текст идеально вписывается по высоте блока
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'middle';
-            // Выводим текст с небольшим отступом от красной полосы
-            ctx.fillText('Ренгалин', rx + stripeW + 8, ry + rh / 2);
-            
-            ctx.restore();
+        ctx.arc(cx,cy,cell*.28,0,Math.PI*2);
+        ctx.fillStyle = superPower ? '#FFFFFF' : (disease ? '#9CA3AB' : '#F5A8B0');
+        if(superPower){
+          ctx.shadowColor = '#E30613'; ctx.shadowBlur = 16;
         }
-
-        // 4. Отрисовка Змейки (Иммунитета)
-        snake.forEach((segment, index) => {
-            ctx.save();
-            let isHead = index === 0;
-            
-            if (isShielded) {
-                // Под действием Ренгалина: сияющая супер-сила (неоновый алый + золото)
-                ctx.fillStyle = isHead ? 'var(--rengalin-red)' : '#FFD700';
-                ctx.shadowColor = '#FFD700';
-                ctx.shadowBlur = 8;
-            } else if (isSick) {
-                // Болезнь (кашель): блёклая грязно-серая змейка
-                ctx.fillStyle = isHead ? '#94A3B8' : '#E2E8F0';
-            } else {
-                // Обычное здоровое состояние: фирменные цвета Ренгалина
-                if (isHead) {
-                    ctx.fillStyle = 'var(--rengalin-red)'; // Красная голова
-                } else {
-                    // Разноцветное тело (синий, оранжевый, зеленый) как силуэты на коробке
-                    ctx.fillStyle = bodyColors[(index - 1) % bodyColors.length];
-                }
-            }
-
-            ctx.beginPath();
-            let radius = isHead ? gridSize/2 - 1 : gridSize/2 - 2.5;
-            ctx.arc(segment.x * gridSize + gridSize/2, segment.y * gridSize + gridSize/2, radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
-        });
+        ctx.fill(); ctx.shadowBlur = 0;
+      }
     }
+  }
 
-    // Вспомогательная функция для отрисовки колючки (сухой кашель)
-   // Новая функция отрисовки понятного колючего вируса (вместо drawStar)
-    function drawWetCoughMonster(cx, cy, radius) {
-        ctx.save();
+  function drawHead(cx,cy,cell){
+    const r = cell*.36;
+    let angle = Math.atan2(direction.y,direction.x);
+    ctx.save();
+    ctx.translate(cx,cy); ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(r,0); ctx.lineTo(-r*.75,-r*.7); ctx.lineTo(-r*.75,r*.7); ctx.closePath();
+    ctx.fillStyle = '#E30613';
+    if(superPower){ctx.shadowColor='#E30613';ctx.shadowBlur=24}
+    ctx.fill(); ctx.shadowBlur=0;
+    ctx.restore();
+  }
 
-        // 1. Рисуем форму склизкой капли (зеленый Ренгалин-цвет)
-        ctx.fillStyle = '#79B443'; 
-        ctx.beginPath();
-        // Рисуем каплю: вытягиваем верхнюю точку чуть выше центра
-        ctx.moveTo(cx, cy - radius - 2); 
-        // Правая сторона и округлое основание
-        ctx.bezierCurveTo(cx + radius, cy - radius, cx + radius + 2, cy + radius, cx, cy + radius);
-        // Левая сторона капли
-        ctx.bezierCurveTo(cx - radius - 2, cy + radius, cx - radius, cy - radius, cx, cy - radius - 2);
-        ctx.fill();
+  function drawApple(x,y,cell){
+    const cx=x+cell/2, cy=y+cell/2;
+    ctx.font = `${cell*.62}px sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('🍎',cx,cy+1);
+  }
 
-        // Тонкий темно-зеленый контур монстрика для четкости
-        ctx.strokeStyle = '#44701F';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
+  function drawCough(x,y,cell,wet){
+    const cx=x+cell/2, cy=y+cell/2;
+    ctx.font = `${cell*.58}px sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(wet ? '💧' : '💣',cx,cy+1);
+  }
 
-        // 2. Глаза злого смайлика (прищуренные сердитые дуги или галочки)
-        ctx.strokeStyle = '#1E293B'; // Темно-серый цвет для мимики
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
+  function drawBonus(x,y,cell){
+    const pad=cell*.12;
+    ctx.save();
+    ctx.fillStyle='#fff'; ctx.strokeStyle='#E30613'; ctx.lineWidth=2;
+    roundRect(x+pad,y+pad,cell-pad*2,cell-pad*2,5);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#E30613';ctx.font=`bold ${cell*.2}px Arial`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('Ренгалин',x+cell/2,y+cell/2);
+    ctx.restore();
+  }
 
-        // Левый глаз (сердитая бровь/глаз наискосок)
-        ctx.beginPath();
-        ctx.moveTo(cx - 5, cy - 3);
-        ctx.lineTo(cx - 2, cy - 1);
-        ctx.stroke();
+  document.getElementById('playBtn').addEventListener('click', startGame);
+  document.getElementById('retryBtn').addEventListener('click', startGame);
+  document.querySelectorAll('.control').forEach(btn => {
+    btn.addEventListener('pointerdown', e => { e.preventDefault(); setDirection(btn.dataset.dir); });
+  });
 
-        // Правый глаз
-        ctx.beginPath();
-        ctx.moveTo(cx + 5, cy - 3);
-        ctx.lineTo(cx + 2, cy - 1);
-        ctx.stroke();
+  window.addEventListener('keydown', e => {
+    const keys={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',s:'down',a:'left',d:'right'};
+    if(keys[e.key]){e.preventDefault();setDirection(keys[e.key]);}
+  });
 
-        // 3. Зубастая пугающая ухмылка
-        ctx.fillStyle = '#FFFFFF'; // Белые зубы
-        ctx.strokeStyle = '#1E293B';
-        ctx.lineWidth = 1;
-        
-        // Рисуем открытый рот
-        ctx.beginPath();
-        ctx.arc(cx, cy + 3, 4, 0, Math.PI); // Полукруг внизу
-        ctx.lineTo(cx - 4, cy + 3); // Замыкаем верхнюю линию рта
-        ctx.fill();
-        ctx.stroke();
+  canvas.addEventListener('touchstart', e => {
+    const t=e.changedTouches[0]; touchStartX=t.clientX; touchStartY=t.clientY;
+  }, {passive:true});
+  canvas.addEventListener('touchend', e => {
+    const t=e.changedTouches[0];
+    const dx=t.clientX-touchStartX, dy=t.clientY-touchStartY;
+    if(Math.max(Math.abs(dx),Math.abs(dy))<20)return;
+    if(Math.abs(dx)>Math.abs(dy)) setDirection(dx>0?'right':'left');
+    else setDirection(dy>0?'down':'up');
+  }, {passive:true});
 
-        // Маленькие грозные зубки (вертикальные черточки)
-        ctx.strokeStyle = '#1E293B';
-        ctx.beginPath();
-        ctx.moveTo(cx - 2, cy + 3); ctx.lineTo(cx - 2, cy + 5);
-        ctx.moveTo(cx, cy + 3); ctx.lineTo(cx, cy + 6);
-        ctx.moveTo(cx + 2, cy + 3); ctx.lineTo(cx + 2, cy + 5);
-        ctx.stroke();
-
-        // 4. Небольшой водянистый блик на макушке, чтобы капля казалась склизкой
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.beginPath();
-        ctx.arc(cx + 3, cy - 4, 1.5, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.restore();
-    }
-    // УВЕДОМЛЕНИЯ И ИНТЕРФЕЙСНЫЕ ПЛАШКИ
-    function showAlert(title, desc) {
-        const banner = document.getElementById('alert-banner');
-        document.getElementById('alert-title').innerText = title;
-        document.getElementById('alert-desc').innerText = desc;
-        banner.classList.add('show');
-    }
-    
-    function hideAlert() {
-        document.getElementById('alert-banner').classList.remove('show');
-    }
-
-    function updateStatusBadge(text) {
-        const badge = document.getElementById('status-badge');
-        if (text) {
-            badge.innerText = text;
-            badge.classList.add('active');
-        } else {
-            badge.innerText = 'Защита неактивна';
-            badge.classList.remove('active');
-        }
-    }
-
-    // ЭКРАН GAME OVER (ПРОИГРЫШ)
-    function gameOver() {
-        if (gameInterval) clearTimeout(gameInterval);
-        
-        // Сохранение рекорда в локальную память телефона
-      function gameOver() {
-        // Принудительно уничтожаем таймер шагов в момент проигрыша
-        if (gameInterval) {
-            clearTimeout(gameInterval);
-            gameInterval = null;
-        }
-        
-        if (score > bestScore) { 
-            bestScore = score; 
-            localStorage.setItem('rengalin_best', bestScore); 
-        }
-        
-        // Заполняем финальный экран данными
-        document.getElementById('final-score').innerText = score;
-        document.getElementById('final-destroyed').innerText = destroyedCoughs;
-        document.getElementById('final-shield').innerText = Math.round(totalShieldTime);
-        document.getElementById('best-score').innerText = bestScore;
-        
-        // Переключаем экраны интерфейса
-        document.getElementById('game-interface').classList.add('hidden');
-        document.getElementById('gameover-screen').classList.remove('hidden');
-    }
-
-  // ОБРАБОТКА УПРАВЛЕНИЯ (KEYBOARD + ON-SCREEN JOYSTICK)
-    
-    // 1. Управление с клавиатуры для тестов на ПК
-    window.addEventListener('keydown', e => {
-        switch(e.key) {
-            case 'ArrowUp':    if (velocity.y !== 1)  nextVelocity = { x: 0, y: -1 }; break;
-            case 'ArrowDown':  if (velocity.y !== -1) nextVelocity = { x: 0, y: 1 };  break;
-            case 'ArrowLeft':  if (velocity.x !== 1)  nextVelocity = { x: -1, y: 0 }; break;
-            case 'ArrowRight': if (velocity.x !== -1) nextVelocity = { x: 1, y: 0 };  break;
-        }
-    });
-
-    // 2. Управление кнопками экранного джойстика
-    // Используем 'touchstart' вместо 'click' для мгновенного отклика без задержек мобильных браузеров
-    document.getElementById('joy-up').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        if (velocity.y !== 1) nextVelocity = { x: 0, y: -1 };
-    });
-
-    document.getElementById('joy-down').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        if (velocity.y !== -1) nextVelocity = { x: 0, y: 1 };
-    });
-
-    document.getElementById('joy-left').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        if (velocity.x !== 1) nextVelocity = { x: -1, y: 0 };
-    });
-
-    document.getElementById('joy-right').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        if (velocity.x !== -1) nextVelocity = { x: 1, y: 0 };
-    });
-
-    // Дублируем для мышки, чтобы джойстик кликался и на ПК при тестировании
-    document.getElementById('joy-up').addEventListener('click', () => {
-        if (velocity.y !== 1) nextVelocity = { x: 0, y: -1 };
-    });
-    document.getElementById('joy-down').addEventListener('click', () => {
-        if (velocity.y !== -1) nextVelocity = { x: 0, y: 1 };
-    });
-    document.getElementById('joy-left').addEventListener('click', () => {
-        if (velocity.x !== 1) nextVelocity = { x: -1, y: 0 };
-    });
-    document.getElementById('joy-right').addEventListener('click', () => {
-        if (velocity.x !== -1) nextVelocity = { x: 1, y: 0 };
-    });
-    // ОБРАБОТЧИКИ НАЖАТИЙ НА КНОПКИ МЕНЮ
-    document.getElementById('start-btn').addEventListener('click', () => {
-        document.getElementById('menu-screen').classList.add('hidden');
-        document.getElementById('game-interface').classList.remove('hidden');
-        initGame();
-    });
-
-    document.getElementById('restart-btn').addEventListener('click', () => {
-        document.getElementById('gameover-screen').classList.add('hidden');
-        document.getElementById('game-interface').classList.remove('hidden');
-        initGame();
-    });
+  draw();
+})();
 </script>
 </body>
 </html>
